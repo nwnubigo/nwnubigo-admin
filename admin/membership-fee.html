@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회비 관리 - 남원시 농촌관광</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div class="sidebar-overlay" onclick="Utils.closeSidebar()"></div>
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>&#127793; 남원시 농촌관광</h2>
+        <div class="user-info" id="userInfo">관리자</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">관리</div>
+        <a class="nav-item" href="dashboard.html"><span class="icon">&#128202;</span> 대시보드</a>
+        <a class="nav-item" href="business-manage.html"><span class="icon">&#127970;</span> 경영체 관리</a>
+        <a class="nav-item" href="program-manage.html"><span class="icon">&#127915;</span> 프로그램 관리</a>
+        <div class="nav-section">견적/청구</div>
+        <a class="nav-item" href="estimate-review.html"><span class="icon">&#128196;</span> 견적서 검토</a>
+        <a class="nav-item" href="invoice-review.html"><span class="icon">&#128203;</span> 청구서 검토</a>
+        <div class="nav-section">정산</div>
+        <a class="nav-item" href="payment-manage.html"><span class="icon">&#128179;</span> 프로그램비 지급</a>
+        <a class="nav-item" href="marketing-fee.html"><span class="icon">&#128176;</span> 공동마케팅비</a>
+        <a class="nav-item active" href="membership-fee.html"><span class="icon">&#128181;</span> 회비 관리</a>
+        <div class="nav-section">기타</div>
+        <a class="nav-item" href="event-manage.html"><span class="icon">&#128197;</span> 행사 관리</a>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <header class="top-header">
+        <div class="d-flex align-center gap-1">
+          <button class="menu-toggle" onclick="Utils.toggleSidebar()">&#9776;</button>
+          <span class="page-title">회비 납부 관리</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" onclick="Auth.logout()">로그아웃</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <div class="filter-bar">
+          <select class="form-control" style="width:auto;min-width:130px" id="filterMonth" onchange="filterList()">
+            <option value="">전체 월</option>
+          </select>
+          <select class="form-control" style="width:auto;min-width:130px" id="filterStatus" onchange="filterList()">
+            <option value="">전체 상태</option>
+            <option value="미입금">미입금</option>
+            <option value="입금완료">입금완료</option>
+          </select>
+          <button class="btn btn-primary" onclick="openAddModal()">+ 회비 등록</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>회비 납부 목록 (<span id="totalCount">0</span>건)</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>회비ID</th>
+                    <th>경영체명</th>
+                    <th>대상월</th>
+                    <th>납부금액</th>
+                    <th>입금일</th>
+                    <th>입금상태</th>
+                    <th>비고</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+                <tbody id="feeList">
+                  <tr><td colspan="8" class="text-center text-muted">데이터를 불러오는 중...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 회비 등록/수정 모달 -->
+  <div class="modal-overlay" id="feeModal">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <h3 id="modalTitle">회비 납부 등록</h3>
+        <button class="modal-close" onclick="Utils.closeModal('feeModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="feeForm">
+          <input type="hidden" name="회비ID" id="editFeeId">
+          <div class="form-group">
+            <label class="required">경영체</label>
+            <select name="경영체ID" class="form-control" required id="modalBusinessSelect">
+              <option value="">경영체 선택</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="required">대상월</label>
+            <input type="month" name="대상월" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="required">납부금액 (원)</label>
+            <input type="number" name="납부금액" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>입금일</label>
+            <input type="date" name="입금일" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>입금상태</label>
+            <select name="입금상태" class="form-control">
+              <option value="미입금">미입금</option>
+              <option value="입금완료">입금완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>비고</label>
+            <textarea name="비고" class="form-control" rows="2"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="Utils.closeModal('feeModal')">취소</button>
+        <button class="btn btn-primary" onclick="saveFee()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    if (!Auth.requireAuth('admin')) window.location.href = '../index.html';
+    document.getElementById('userInfo').textContent = Auth.getUserName() + ' (관리자)';
+
+    let allFees = [];
+    let allBusinesses = [];
+
+    const filterMonth = document.getElementById('filterMonth');
+    for (let m = 1; m <= 12; m++) {
+      const val = `2026-${String(m).padStart(2,'0')}`;
+      filterMonth.innerHTML += `<option value="${val}">${2026}년 ${m}월</option>`;
+    }
+
+    async function loadData() {
+      try {
+        const [feeResult, bizResult] = await Promise.all([
+          API.getMembershipFeeList(),
+          API.getBusinessList()
+        ]);
+        allFees = feeResult.data || [];
+        allBusinesses = bizResult.data || [];
+
+        const select = document.getElementById('modalBusinessSelect');
+        allBusinesses.filter(b => b['상태'] === '활성' && b['권한'] !== 'admin').forEach(b => {
+          select.innerHTML += `<option value="${b['경영체ID']}">${b['경영체명']}</option>`;
+        });
+        renderList(allFees);
+      } catch (error) {
+        document.getElementById('feeList').innerHTML =
+          '<tr><td colspan="8" class="text-center text-muted">API 연결 후 데이터가 표시됩니다.</td></tr>';
+      }
+    }
+
+    function getBizName(id) {
+      const b = allBusinesses.find(b => b['경영체ID'] === id);
+      return b ? b['경영체명'] : id || '-';
+    }
+
+    function renderList(data) {
+      document.getElementById('totalCount').textContent = data.length;
+      const tbody = document.getElementById('feeList');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">회비 내역이 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(f => `
+        <tr>
+          <td>${f['회비ID']}</td>
+          <td><strong>${getBizName(f['경영체ID'])}</strong></td>
+          <td>${f['대상월']}</td>
+          <td class="text-right">${Utils.formatCurrency(f['납부금액'])}</td>
+          <td>${Utils.formatDate(f['입금일']) || '-'}</td>
+          <td>${Utils.getBadgeHtml(f['입금상태'])}</td>
+          <td>${f['비고'] || ''}</td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="editFee('${f['회비ID']}')">수정</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function filterList() {
+      const month = document.getElementById('filterMonth').value;
+      const status = document.getElementById('filterStatus').value;
+      let filtered = allFees;
+      if (month) filtered = filtered.filter(f => f['대상월'] === month);
+      if (status) filtered = filtered.filter(f => f['입금상태'] === status);
+      renderList(filtered);
+    }
+
+    function openAddModal() {
+      document.getElementById('modalTitle').textContent = '회비 납부 등록';
+      document.getElementById('feeForm').reset();
+      document.getElementById('editFeeId').value = '';
+      Utils.openModal('feeModal');
+    }
+
+    function editFee(feeId) {
+      const f = allFees.find(f => f['회비ID'] === feeId);
+      if (!f) return;
+      document.getElementById('modalTitle').textContent = '회비 수정';
+      Utils.fillForm('feeForm', f);
+      document.getElementById('editFeeId').value = feeId;
+      Utils.openModal('feeModal');
+    }
+
+    async function saveFee() {
+      const data = Utils.getFormData('feeForm');
+      if (!data['경영체ID'] || !data['대상월'] || !data['납부금액']) {
+        Utils.showToast('필수 항목을 입력하세요.', 'warning');
+        return;
+      }
+      Utils.showLoading();
+      try {
+        await API.updateMembershipFee(data);
+        Utils.showToast('저장되었습니다.', 'success');
+        Utils.closeModal('feeModal');
+        const result = await API.getMembershipFeeList();
+        allFees = result.data || [];
+        filterList();
+      } catch (error) {
+        Utils.showToast(error.message, 'error');
+      } finally {
+        Utils.hideLoading();
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>견적서 관리 - 남원시 농촌관광</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div class="sidebar-overlay" onclick="Utils.closeSidebar()"></div>
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>&#127793; 남원시 농촌관광</h2>
+        <div class="user-info" id="userInfo">경영체</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">나의 관리</div>
+        <a class="nav-item" href="dashboard.html"><span class="icon">&#128202;</span> 대시보드</a>
+        <a class="nav-item active" href="estimate.html"><span class="icon">&#128196;</span> 견적서 관리</a>
+        <a class="nav-item" href="invoice.html"><span class="icon">&#128203;</span> 청구서 관리</a>
+        <a class="nav-item" href="marketing-fee.html"><span class="icon">&#128176;</span> 공동마케팅비</a>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <header class="top-header">
+        <div class="d-flex align-center gap-1">
+          <button class="menu-toggle" onclick="Utils.toggleSidebar()">&#9776;</button>
+          <span class="page-title">견적서 관리</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" onclick="Auth.logout()">로그아웃</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- 미처리 예약 알림 -->
+        <div id="unprocessedAlert" class="hidden">
+          <div class="card mb-2" style="padding:12px 16px;background:#FFF3E0;border:1px solid #FFE0B2">
+            <div class="d-flex justify-between align-center">
+              <span>&#9888;&#65039; 견적서 처리가 필요한 예약이 <strong id="unprocessedCount">0</strong>건 있습니다.</span>
+              <button class="btn btn-sm btn-secondary" onclick="showUnprocessed()">견적서 작성</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="search-input">
+            <input type="text" id="searchInput" placeholder="예약자명으로 검색..." onkeyup="filterList()">
+          </div>
+          <button class="btn btn-outline" onclick="refreshCrawling()">예약정보 새로고침</button>
+          <button class="btn btn-primary" onclick="openManualReservation()">+ 예약 수동입력</button>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" data-status="" onclick="switchTab(this)">전체</div>
+          <div class="tab" data-status="미검토" onclick="switchTab(this)">미검토</div>
+          <div class="tab" data-status="검토완료" onclick="switchTab(this)">검토완료</div>
+          <div class="tab" data-status="보완요청" onclick="switchTab(this)">보완요청</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>견적서 목록 (<span id="totalCount">0</span>건)</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>견적서ID</th>
+                    <th>예약자명</th>
+                    <th>체크인</th>
+                    <th>체크아웃</th>
+                    <th>인원</th>
+                    <th>총금액</th>
+                    <th>지원금(30%)</th>
+                    <th>검토상태</th>
+                    <th>견적서파일</th>
+                  </tr>
+                </thead>
+                <tbody id="estimateList">
+                  <tr><td colspan="9" class="text-center text-muted">데이터를 불러오는 중...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 견적서 작성 모달 (미처리 예약 기반) -->
+  <div class="modal-overlay" id="estimateModal">
+    <div class="modal" style="max-width:650px">
+      <div class="modal-header">
+        <h3>견적서 작성</h3>
+        <button class="modal-close" onclick="Utils.closeModal('estimateModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="estimateForm">
+          <input type="hidden" name="크롤링ID" id="crawlingId">
+
+          <div class="form-group">
+            <label>예약 정보 선택 (미처리 예약)</label>
+            <select id="reservationSelect" class="form-control" onchange="fillFromReservation()">
+              <option value="">예약을 선택하세요</option>
+            </select>
+          </div>
+
+          <hr style="margin:12px 0;border-color:var(--border)">
+
+          <div class="d-flex gap-2 flex-wrap">
+            <div class="form-group" style="flex:1;min-width:150px">
+              <label class="required">예약자명</label>
+              <input type="text" name="예약자명" class="form-control" required>
+            </div>
+            <div class="form-group" style="flex:1;min-width:100px">
+              <label class="required">예약인원</label>
+              <input type="number" name="예약인원" class="form-control" required min="1">
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <div class="form-group" style="flex:1;min-width:150px">
+              <label class="required">체크인일</label>
+              <input type="date" name="체크인일" class="form-control" required>
+            </div>
+            <div class="form-group" style="flex:1;min-width:150px">
+              <label class="required">체크아웃일</label>
+              <input type="date" name="체크아웃일" class="form-control" required>
+            </div>
+          </div>
+
+          <input type="hidden" name="경영체ID_숙박" id="lodgingBizId">
+          <div class="form-group">
+            <label>체험 경영체 선택</label>
+            <select name="경영체ID_체험" class="form-control" id="experienceBizSelect">
+              <option value="">체험 경영체를 선택하세요</option>
+            </select>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <div class="form-group" style="flex:1;min-width:150px">
+              <label class="required">총 금액 (원)</label>
+              <input type="number" name="총금액" class="form-control" required oninput="calcEstimate()">
+            </div>
+            <div class="form-group" style="flex:1;min-width:150px">
+              <label>지원금 (30%)</label>
+              <input type="text" id="calcSupport" class="form-control" readonly style="background:#f5f5f5">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="Utils.closeModal('estimateModal')">취소</button>
+        <button class="btn btn-primary" onclick="saveEstimate()">견적서 발행</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 수동 예약 입력 모달 -->
+  <div class="modal-overlay" id="manualModal">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <h3>예약 수동 입력</h3>
+        <button class="modal-close" onclick="Utils.closeModal('manualModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="manualForm">
+          <div class="form-group">
+            <label class="required">예약자명</label>
+            <input type="text" name="예약자명" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>예약자 연락처</label>
+            <input type="tel" name="예약자연락처" class="form-control" placeholder="010-0000-0000">
+          </div>
+          <div class="form-group">
+            <label class="required">예약인원</label>
+            <input type="number" name="예약인원" class="form-control" required min="1">
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <div class="form-group" style="flex:1">
+              <label class="required">체크인일</label>
+              <input type="date" name="체크인일" class="form-control" required>
+            </div>
+            <div class="form-group" style="flex:1">
+              <label class="required">체크아웃일</label>
+              <input type="date" name="체크아웃일" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>예약상품명</label>
+            <input type="text" name="예약상품명" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>예약금액</label>
+            <input type="number" name="예약금액" class="form-control">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="Utils.closeModal('manualModal')">취소</button>
+        <button class="btn btn-primary" onclick="saveManualReservation()">등록</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    if (!Auth.requireAuth('business')) window.location.href = '../index.html';
+    document.getElementById('userInfo').textContent = Auth.getUserName();
+
+    const businessId = Auth.getBusinessId();
+    document.getElementById('lodgingBizId').value = businessId;
+
+    let allEstimates = [];
+    let unprocessedReservations = [];
+    let currentStatusFilter = '';
+
+    async function loadData() {
+      try {
+        const [estResult, unResult, bizResult] = await Promise.all([
+          API.getEstimateList(businessId),
+          API.getUnprocessedReservations(businessId),
+          API.getBusinessList()
+        ]);
+
+        allEstimates = estResult.data || [];
+        unprocessedReservations = unResult.data || [];
+
+        // 체험 경영체 셀렉트
+        const expBizzes = (bizResult.data || []).filter(b => b['상태'] === '활성' && (b['경영체유형'] === '체험' || b['경영체유형'] === '복합'));
+        const select = document.getElementById('experienceBizSelect');
+        expBizzes.forEach(b => {
+          select.innerHTML += `<option value="${b['경영체ID']}">${b['경영체명']}</option>`;
+        });
+
+        // 미처리 예약 알림
+        if (unprocessedReservations.length > 0) {
+          document.getElementById('unprocessedAlert').classList.remove('hidden');
+          document.getElementById('unprocessedCount').textContent = unprocessedReservations.length;
+        }
+
+        renderList(allEstimates);
+      } catch (error) {
+        document.getElementById('estimateList').innerHTML =
+          '<tr><td colspan="9" class="text-center text-muted">API 연결 후 데이터가 표시됩니다.</td></tr>';
+      }
+    }
+
+    function renderList(data) {
+      document.getElementById('totalCount').textContent = data.length;
+      const tbody = document.getElementById('estimateList');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">견적서가 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(e => `
+        <tr>
+          <td>${e['견적서ID']}</td>
+          <td><strong>${e['예약자명']}</strong></td>
+          <td>${Utils.formatDate(e['체크인일'])}</td>
+          <td>${Utils.formatDate(e['체크아웃일'])}</td>
+          <td>${e['예약인원']}명</td>
+          <td class="text-right">${Utils.formatCurrency(e['총금액'])}</td>
+          <td class="text-right text-success">${Utils.formatCurrency(e['지원금액'])}</td>
+          <td>${Utils.getBadgeHtml(e['검토상태'])}</td>
+          <td>${e['견적서파일경로'] ? '<a href="'+e['견적서파일경로']+'" target="_blank" class="btn btn-sm btn-outline">보기</a>' : '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function switchTab(el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      currentStatusFilter = el.dataset.status;
+      filterList();
+    }
+
+    function filterList() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      let filtered = allEstimates;
+      if (currentStatusFilter) filtered = filtered.filter(e => e['검토상태'] === currentStatusFilter);
+      if (search) filtered = filtered.filter(e => (e['예약자명'] || '').toLowerCase().includes(search));
+      renderList(filtered);
+    }
+
+    function showUnprocessed() {
+      // 예약 선택 드롭다운 채우기
+      const select = document.getElementById('reservationSelect');
+      select.innerHTML = '<option value="">예약을 선택하세요</option>';
+      unprocessedReservations.forEach(r => {
+        select.innerHTML += `<option value="${r['크롤링ID']}">${r['예약자명']} - ${Utils.formatDate(r['체크인일'])} (${r['예약인원']}명)</option>`;
+      });
+      document.getElementById('estimateForm').reset();
+      document.getElementById('lodgingBizId').value = businessId;
+      document.getElementById('calcSupport').value = '';
+      Utils.openModal('estimateModal');
+    }
+
+    function fillFromReservation() {
+      const crawlingId = document.getElementById('reservationSelect').value;
+      if (!crawlingId) return;
+      const res = unprocessedReservations.find(r => r['크롤링ID'] === crawlingId);
+      if (!res) return;
+
+      document.getElementById('crawlingId').value = crawlingId;
+      document.querySelector('[name="예약자명"]').value = res['예약자명'] || '';
+      document.querySelector('[name="예약인원"]').value = res['예약인원'] || '';
+      document.querySelector('[name="체크인일"]').value = Utils.formatDate(res['체크인일']);
+      document.querySelector('[name="체크아웃일"]').value = Utils.formatDate(res['체크아웃일']);
+      document.querySelector('[name="총금액"]').value = res['예약금액'] || '';
+      calcEstimate();
+    }
+
+    function calcEstimate() {
+      const total = Number(document.querySelector('[name="총금액"]').value) || 0;
+      document.getElementById('calcSupport').value = Utils.formatCurrency(Utils.calcSupportAmount(total));
+    }
+
+    async function saveEstimate() {
+      const data = Utils.getFormData('estimateForm');
+      if (!data['예약자명'] || !data['예약인원'] || !data['체크인일'] || !data['총금액']) {
+        Utils.showToast('필수 항목을 입력하세요.', 'warning');
+        return;
+      }
+      data['경영체ID_숙박'] = businessId;
+
+      Utils.showLoading();
+      try {
+        const result = await API.saveEstimate(data);
+        // 견적서 파일 생성
+        if (result.data && result.data.estimateId) {
+          await API.generateEstimateFile(result.data.estimateId);
+        }
+        Utils.showToast('견적서가 발행되었습니다.', 'success');
+        Utils.closeModal('estimateModal');
+        loadData();
+      } catch (error) {
+        Utils.showToast(error.message, 'error');
+      } finally {
+        Utils.hideLoading();
+      }
+    }
+
+    function openManualReservation() {
+      document.getElementById('manualForm').reset();
+      Utils.openModal('manualModal');
+    }
+
+    async function saveManualReservation() {
+      const data = Utils.getFormData('manualForm');
+      if (!data['예약자명'] || !data['예약인원'] || !data['체크인일']) {
+        Utils.showToast('필수 항목을 입력하세요.', 'warning');
+        return;
+      }
+      data['경영체ID'] = businessId;
+      data['예약상태'] = '예약확정';
+      data['수동입력여부'] = true;
+
+      Utils.showLoading();
+      try {
+        await API.saveReservation(data);
+        Utils.showToast('예약이 등록되었습니다.', 'success');
+        Utils.closeModal('manualModal');
+        loadData();
+      } catch (error) {
+        Utils.showToast(error.message, 'error');
+      } finally {
+        Utils.hideLoading();
+      }
+    }
+
+    async function refreshCrawling() {
+      Utils.showLoading();
+      try {
+        await API.triggerCrawling(businessId);
+        Utils.showToast('예약정보를 새로고침했습니다.', 'success');
+        loadData();
+      } catch (error) {
+        Utils.showToast('크롤링 실패: ' + error.message, 'error');
+      } finally {
+        Utils.hideLoading();
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

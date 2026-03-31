@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>청구서 검토 - 남원시 농촌관광</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div class="sidebar-overlay" onclick="Utils.closeSidebar()"></div>
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>&#127793; 남원시 농촌관광</h2>
+        <div class="user-info" id="userInfo">관리자</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">관리</div>
+        <a class="nav-item" href="dashboard.html"><span class="icon">&#128202;</span> 대시보드</a>
+        <a class="nav-item" href="business-manage.html"><span class="icon">&#127970;</span> 경영체 관리</a>
+        <a class="nav-item" href="program-manage.html"><span class="icon">&#127915;</span> 프로그램 관리</a>
+        <div class="nav-section">견적/청구</div>
+        <a class="nav-item" href="estimate-review.html"><span class="icon">&#128196;</span> 견적서 검토</a>
+        <a class="nav-item active" href="invoice-review.html"><span class="icon">&#128203;</span> 청구서 검토</a>
+        <div class="nav-section">정산</div>
+        <a class="nav-item" href="payment-manage.html"><span class="icon">&#128179;</span> 프로그램비 지급</a>
+        <a class="nav-item" href="marketing-fee.html"><span class="icon">&#128176;</span> 공동마케팅비</a>
+        <a class="nav-item" href="membership-fee.html"><span class="icon">&#128181;</span> 회비 관리</a>
+        <div class="nav-section">기타</div>
+        <a class="nav-item" href="event-manage.html"><span class="icon">&#128197;</span> 행사 관리</a>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <header class="top-header">
+        <div class="d-flex align-center gap-1">
+          <button class="menu-toggle" onclick="Utils.toggleSidebar()">&#9776;</button>
+          <span class="page-title">청구서 검토</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" onclick="Auth.logout()">로그아웃</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <div class="tabs">
+          <div class="tab active" data-status="" onclick="switchTab(this)">전체</div>
+          <div class="tab" data-status="미검토" onclick="switchTab(this)">미검토</div>
+          <div class="tab" data-status="검토완료" onclick="switchTab(this)">검토완료</div>
+          <div class="tab" data-status="보완요청" onclick="switchTab(this)">보완요청</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>청구서 목록 (<span id="totalCount">0</span>건)</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>청구서ID</th>
+                    <th>견적서ID</th>
+                    <th>경영체명</th>
+                    <th>유형</th>
+                    <th>제출일</th>
+                    <th>참석자명부</th>
+                    <th>체험사진</th>
+                    <th>검토상태</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+                <tbody id="invoiceList">
+                  <tr><td colspan="9" class="text-center text-muted">데이터를 불러오는 중...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 청구서 검토 모달 -->
+  <div class="modal-overlay" id="reviewModal">
+    <div class="modal" style="max-width:650px">
+      <div class="modal-header">
+        <h3>청구서 검토</h3>
+        <button class="modal-close" onclick="Utils.closeModal('reviewModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="invoiceDetail"></div>
+        <hr style="margin:16px 0;border-color:var(--border)">
+        <div class="form-group">
+          <label class="required">검토 결과</label>
+          <select id="reviewStatus" class="form-control">
+            <option value="검토완료">검토완료</option>
+            <option value="보완요청">보완요청</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>검토 메모 (보완 필요시 구체적으로 입력)</label>
+          <textarea id="reviewMemo" class="form-control" rows="3" placeholder="예: 체험 사진에 인원수 확인 불가, 가로 촬영 필요"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="Utils.closeModal('reviewModal')">취소</button>
+        <button class="btn btn-primary" onclick="submitReview()">검토 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    if (!Auth.requireAuth('admin')) window.location.href = '../index.html';
+    document.getElementById('userInfo').textContent = Auth.getUserName() + ' (관리자)';
+
+    let allInvoices = [];
+    let allBusinesses = [];
+    let currentStatusFilter = '';
+    let currentInvoiceId = '';
+
+    async function loadData() {
+      try {
+        const [invResult, bizResult] = await Promise.all([
+          API.getInvoiceList(),
+          API.getBusinessList()
+        ]);
+        allInvoices = invResult.data || [];
+        allBusinesses = bizResult.data || [];
+        renderList(allInvoices);
+      } catch (error) {
+        document.getElementById('invoiceList').innerHTML =
+          '<tr><td colspan="9" class="text-center text-muted">API 연결 후 데이터가 표시됩니다.</td></tr>';
+      }
+    }
+
+    function getBizName(id) {
+      const b = allBusinesses.find(b => b['경영체ID'] === id);
+      return b ? b['경영체명'] : id || '-';
+    }
+
+    function renderList(data) {
+      document.getElementById('totalCount').textContent = data.length;
+      const tbody = document.getElementById('invoiceList');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">청구서가 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(inv => `
+        <tr>
+          <td>${inv['청구서ID']}</td>
+          <td>${inv['견적서ID']}</td>
+          <td><strong>${getBizName(inv['경영체ID'])}</strong></td>
+          <td><span class="badge badge-${inv['경영체유형']==='숙박'?'info':'success'}">${inv['경영체유형']}</span></td>
+          <td>${Utils.formatDate(inv['제출일'])}</td>
+          <td>${inv['참석자명부경로'] ? '<span class="text-success">제출완료</span>' : '<span class="text-muted">미제출</span>'}</td>
+          <td>${inv['체험사진경로들'] ? '<span class="text-success">제출완료</span>' : '<span class="text-muted">미제출</span>'}</td>
+          <td>${Utils.getBadgeHtml(inv['검토상태'])}</td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="openReview('${inv['청구서ID']}')">검토</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function switchTab(el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      currentStatusFilter = el.dataset.status;
+      filterList();
+    }
+
+    function filterList() {
+      let filtered = allInvoices;
+      if (currentStatusFilter) filtered = filtered.filter(inv => inv['검토상태'] === currentStatusFilter);
+      renderList(filtered);
+    }
+
+    function openReview(invoiceId) {
+      const inv = allInvoices.find(i => i['청구서ID'] === invoiceId);
+      if (!inv) return;
+      currentInvoiceId = invoiceId;
+
+      let filesHtml = '';
+      if (inv['참석자명부경로']) {
+        filesHtml += `<div class="mb-1"><a href="${inv['참석자명부경로']}" target="_blank" class="btn btn-sm btn-outline">참석자 명부 보기</a></div>`;
+      }
+      if (inv['체험사진경로들']) {
+        const photos = inv['체험사진경로들'].split(',');
+        filesHtml += `<div class="mb-1">체험 사진 ${photos.length}장: `;
+        photos.forEach((p, i) => {
+          filesHtml += `<a href="${p.trim()}" target="_blank" class="btn btn-sm btn-outline">${i+1}번</a> `;
+        });
+        filesHtml += '</div>';
+      }
+
+      document.getElementById('invoiceDetail').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px">
+          <div><strong>청구서 번호:</strong> ${inv['청구서ID']}</div>
+          <div><strong>견적서 번호:</strong> ${inv['견적서ID']}</div>
+          <div><strong>경영체:</strong> ${getBizName(inv['경영체ID'])}</div>
+          <div><strong>유형:</strong> ${inv['경영체유형']}</div>
+          <div><strong>제출일:</strong> ${Utils.formatDate(inv['제출일'])}</div>
+          <div><strong>현재 상태:</strong> ${Utils.getBadgeHtml(inv['검토상태'])}</div>
+        </div>
+        ${inv['검토결과메모'] ? `<div class="mt-2" style="padding:8px 12px;background:#FFF3E0;border-radius:4px"><strong>이전 검토 메모:</strong> ${inv['검토결과메모']}</div>` : ''}
+        <div class="mt-2"><strong>첨부 파일:</strong></div>
+        ${filesHtml || '<div class="text-muted mt-1">첨부된 파일이 없습니다.</div>'}
+      `;
+
+      document.getElementById('reviewStatus').value = '검토완료';
+      document.getElementById('reviewMemo').value = '';
+      Utils.openModal('reviewModal');
+    }
+
+    async function submitReview() {
+      const status = document.getElementById('reviewStatus').value;
+      const memo = document.getElementById('reviewMemo').value;
+
+      if (status === '보완요청' && !memo) {
+        Utils.showToast('보완요청 시 구체적인 메모를 입력하세요.', 'warning');
+        return;
+      }
+
+      Utils.showLoading();
+      try {
+        await API.reviewInvoice(currentInvoiceId, status, memo);
+        Utils.showToast('검토가 완료되었습니다.', 'success');
+        Utils.closeModal('reviewModal');
+        const result = await API.getInvoiceList();
+        allInvoices = result.data || [];
+        filterList();
+      } catch (error) {
+        Utils.showToast(error.message, 'error');
+      } finally {
+        Utils.hideLoading();
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

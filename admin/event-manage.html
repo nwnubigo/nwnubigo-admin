@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>행사 관리 - 남원시 농촌관광</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div class="sidebar-overlay" onclick="Utils.closeSidebar()"></div>
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>&#127793; 남원시 농촌관광</h2>
+        <div class="user-info" id="userInfo">관리자</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">관리</div>
+        <a class="nav-item" href="dashboard.html"><span class="icon">&#128202;</span> 대시보드</a>
+        <a class="nav-item" href="business-manage.html"><span class="icon">&#127970;</span> 경영체 관리</a>
+        <a class="nav-item" href="program-manage.html"><span class="icon">&#127915;</span> 프로그램 관리</a>
+        <div class="nav-section">견적/청구</div>
+        <a class="nav-item" href="estimate-review.html"><span class="icon">&#128196;</span> 견적서 검토</a>
+        <a class="nav-item" href="invoice-review.html"><span class="icon">&#128203;</span> 청구서 검토</a>
+        <div class="nav-section">정산</div>
+        <a class="nav-item" href="payment-manage.html"><span class="icon">&#128179;</span> 프로그램비 지급</a>
+        <a class="nav-item" href="marketing-fee.html"><span class="icon">&#128176;</span> 공동마케팅비</a>
+        <a class="nav-item" href="membership-fee.html"><span class="icon">&#128181;</span> 회비 관리</a>
+        <div class="nav-section">기타</div>
+        <a class="nav-item active" href="event-manage.html"><span class="icon">&#128197;</span> 행사 관리</a>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <header class="top-header">
+        <div class="d-flex align-center gap-1">
+          <button class="menu-toggle" onclick="Utils.toggleSidebar()">&#9776;</button>
+          <span class="page-title">행사 관리</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" onclick="Auth.logout()">로그아웃</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <div class="filter-bar">
+          <select class="form-control" style="width:auto;min-width:140px" id="filterType" onchange="filterList()">
+            <option value="">전체 유형</option>
+            <option value="사업설명회">사업설명회</option>
+            <option value="간담회">간담회</option>
+            <option value="선진지견학">선진지견학</option>
+            <option value="교육">교육</option>
+          </select>
+          <button class="btn btn-primary" onclick="openAddModal()">+ 행사 등록</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>행사 목록 (<span id="totalCount">0</span>건)</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>행사ID</th>
+                    <th>행사명</th>
+                    <th>유형</th>
+                    <th>일시</th>
+                    <th>장소</th>
+                    <th>참석대상</th>
+                    <th>참석현황</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+                <tbody id="eventList">
+                  <tr><td colspan="8" class="text-center text-muted">데이터를 불러오는 중...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 참석자 관리 영역 -->
+        <div class="card hidden" id="attendeeSection">
+          <div class="card-header">
+            <h3 id="attendeeTitle">참석자 관리</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>경영체명</th>
+                    <th>참석여부</th>
+                    <th>비고</th>
+                  </tr>
+                </thead>
+                <tbody id="attendeeList"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 행사 등록/수정 모달 -->
+  <div class="modal-overlay" id="eventModal">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <h3 id="modalTitle">행사 등록</h3>
+        <button class="modal-close" onclick="Utils.closeModal('eventModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="eventForm">
+          <input type="hidden" name="행사ID" id="editEventId">
+          <div class="form-group">
+            <label class="required">행사명</label>
+            <input type="text" name="행사명" class="form-control" required placeholder="예: 2026년 1분기 사업설명회">
+          </div>
+          <div class="form-group">
+            <label class="required">행사 유형</label>
+            <select name="행사유형" class="form-control" required>
+              <option value="">선택</option>
+              <option value="사업설명회">사업설명회</option>
+              <option value="간담회">간담회</option>
+              <option value="선진지견학">선진지견학</option>
+              <option value="교육">교육</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="required">행사 일시</label>
+            <input type="datetime-local" name="행사일시" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>장소</label>
+            <input type="text" name="장소" class="form-control" placeholder="행사 장소">
+          </div>
+          <div class="form-group">
+            <label>참석 대상</label>
+            <input type="text" name="참석대상" class="form-control" placeholder="예: 전체 경영체, 숙박 경영체 등">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="Utils.closeModal('eventModal')">취소</button>
+        <button class="btn btn-primary" onclick="saveEvent()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    if (!Auth.requireAuth('admin')) window.location.href = '../index.html';
+    document.getElementById('userInfo').textContent = Auth.getUserName() + ' (관리자)';
+
+    let allEvents = [];
+    let currentEventId = '';
+
+    async function loadData() {
+      try {
+        const result = await API.getEventList();
+        allEvents = result.data || [];
+        renderList(allEvents);
+      } catch (error) {
+        document.getElementById('eventList').innerHTML =
+          '<tr><td colspan="8" class="text-center text-muted">API 연결 후 데이터가 표시됩니다.</td></tr>';
+      }
+    }
+
+    function renderList(data) {
+      document.getElementById('totalCount').textContent = data.length;
+      const tbody = document.getElementById('eventList');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">등록된 행사가 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(e => `
+        <tr>
+          <td>${e['행사ID']}</td>
+          <td><strong>${e['행사명']}</strong></td>
+          <td><span class="badge badge-info">${e['행사유형']}</span></td>
+          <td>${Utils.formatDateTime(e['행사일시'])}</td>
+          <td>${e['장소'] || '-'}</td>
+          <td>${e['참석대상'] || '전체'}</td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="showAttendees('${e['행사ID']}', '${e['행사명']}')">참석관리</button>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="editEvent('${e['행사ID']}')">수정</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function filterList() {
+      const type = document.getElementById('filterType').value;
+      let filtered = allEvents;
+      if (type) filtered = filtered.filter(e => e['행사유형'] === type);
+      renderList(filtered);
+    }
+
+    function openAddModal() {
+      document.getElementById('modalTitle').textContent = '행사 등록';
+      document.getElementById('eventForm').reset();
+      document.getElementById('editEventId').value = '';
+      Utils.openModal('eventModal');
+    }
+
+    function editEvent(eventId) {
+      const ev = allEvents.find(e => e['행사ID'] === eventId);
+      if (!ev) return;
+      document.getElementById('modalTitle').textContent = '행사 수정';
+      Utils.fillForm('eventForm', ev);
+      document.getElementById('editEventId').value = eventId;
+      Utils.openModal('eventModal');
+    }
+
+    async function saveEvent() {
+      const data = Utils.getFormData('eventForm');
+      if (!data['행사명'] || !data['행사유형'] || !data['행사일시']) {
+        Utils.showToast('필수 항목을 입력하세요.', 'warning');
+        return;
+      }
+      Utils.showLoading();
+      try {
+        await API.saveEvent(data);
+        Utils.showToast('저장되었습니다.', 'success');
+        Utils.closeModal('eventModal');
+        const result = await API.getEventList();
+        allEvents = result.data || [];
+        filterList();
+      } catch (error) {
+        Utils.showToast(error.message, 'error');
+      } finally {
+        Utils.hideLoading();
+      }
+    }
+
+    async function showAttendees(eventId, eventName) {
+      currentEventId = eventId;
+      document.getElementById('attendeeTitle').textContent = `참석자 관리 - ${eventName}`;
+      document.getElementById('attendeeSection').classList.remove('hidden');
+
+      try {
+        const result = await API.getEventAttendees(eventId);
+        const attendees = result.data || [];
+        const tbody = document.getElementById('attendeeList');
+
+        if (attendees.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">참석 대상이 없습니다.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = attendees.map(a => `
+          <tr>
+            <td><strong>${a['경영체명']}</strong></td>
+            <td>
+              <input type="checkbox" ${a['참석여부'] ? 'checked' : ''}
+                onchange="updateAttendance('${a['경영체ID']}', this.checked)"
+                style="width:18px;height:18px;cursor:pointer">
+            </td>
+            <td>${a['비고'] || ''}</td>
+          </tr>
+        `).join('');
+
+        // 스크롤 이동
+        document.getElementById('attendeeSection').scrollIntoView({ behavior: 'smooth' });
+      } catch (error) {
+        Utils.showToast('참석자 목록 로드 실패', 'error');
+      }
+    }
+
+    async function updateAttendance(businessId, attended) {
+      try {
+        await API.updateAttendance(currentEventId, businessId, attended);
+        Utils.showToast('참석여부가 업데이트되었습니다.', 'success');
+      } catch (error) {
+        Utils.showToast(error.message, 'error');
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

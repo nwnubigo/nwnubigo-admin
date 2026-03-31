@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>공동마케팅비 - 남원시 농촌관광</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div class="sidebar-overlay" onclick="Utils.closeSidebar()"></div>
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>&#127793; 남원시 농촌관광</h2>
+        <div class="user-info" id="userInfo">경영체</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">나의 관리</div>
+        <a class="nav-item" href="dashboard.html"><span class="icon">&#128202;</span> 대시보드</a>
+        <a class="nav-item" href="estimate.html"><span class="icon">&#128196;</span> 견적서 관리</a>
+        <a class="nav-item" href="invoice.html"><span class="icon">&#128203;</span> 청구서 관리</a>
+        <a class="nav-item active" href="marketing-fee.html"><span class="icon">&#128176;</span> 공동마케팅비</a>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <header class="top-header">
+        <div class="d-flex align-center gap-1">
+          <button class="menu-toggle" onclick="Utils.toggleSidebar()">&#9776;</button>
+          <span class="page-title">공동마케팅비 납부</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" onclick="Auth.logout()">로그아웃</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <div class="card mb-2" style="padding:12px 16px;background:#E8F5E9;border:1px solid #C8E6C9;font-size:13px">
+          <strong>공동홍보마케팅비 안내:</strong><br>
+          매월 말일 관광상품 판매금액 총액의 <strong>10%</strong>를 협의체 통장으로 <strong>익월 5일까지</strong> 입금해주세요.
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">&#128176;</div>
+            <div class="stat-value" id="statTotalFee">0원</div>
+            <div class="stat-label">총 납부금액</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">&#9989;</div>
+            <div class="stat-value" id="statPaid">0건</div>
+            <div class="stat-label">입금완료</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">&#9200;</div>
+            <div class="stat-value" id="statUnpaid">0건</div>
+            <div class="stat-label">미입금</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>납부 내역 (<span id="totalCount">0</span>건)</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>대상월</th>
+                    <th>판매총액</th>
+                    <th>납부금액(10%)</th>
+                    <th>납부기한</th>
+                    <th>입금일</th>
+                    <th>입금상태</th>
+                    <th>입금확인증</th>
+                  </tr>
+                </thead>
+                <tbody id="feeList">
+                  <tr><td colspan="7" class="text-center text-muted">데이터를 불러오는 중...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    if (!Auth.requireAuth('business')) window.location.href = '../index.html';
+    document.getElementById('userInfo').textContent = Auth.getUserName();
+
+    const businessId = Auth.getBusinessId();
+
+    async function loadData() {
+      try {
+        const result = await API.getMarketingFeeList(businessId);
+        const fees = result.data || [];
+
+        // 통계
+        const paid = fees.filter(f => f['입금상태'] === '입금완료');
+        const unpaid = fees.filter(f => f['입금상태'] === '미입금');
+        const totalFee = paid.reduce((sum, f) => sum + Number(f['납부금액'] || 0), 0);
+
+        document.getElementById('statTotalFee').textContent = Utils.formatCurrency(totalFee);
+        document.getElementById('statPaid').textContent = paid.length + '건';
+        document.getElementById('statUnpaid').textContent = unpaid.length + '건';
+        document.getElementById('totalCount').textContent = fees.length;
+
+        const tbody = document.getElementById('feeList');
+        if (fees.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">납부 내역이 없습니다.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = fees.map(f => `
+          <tr style="${f['입금상태']==='미입금' && new Date(f['납부기한']) < new Date() ? 'background:#FFCDD2' : ''}">
+            <td><strong>${f['대상월']}</strong></td>
+            <td class="text-right">${Utils.formatCurrency(f['판매총액'])}</td>
+            <td class="text-right text-success">${Utils.formatCurrency(f['납부금액'])}</td>
+            <td>${Utils.formatDate(f['납부기한'])}</td>
+            <td>${Utils.formatDate(f['입금일']) || '-'}</td>
+            <td>${Utils.getBadgeHtml(f['입금상태'])}</td>
+            <td>
+              ${f['입금확인증경로'] ? `<a href="${f['입금확인증경로']}" target="_blank" class="btn btn-sm btn-outline">다운로드</a>` : '-'}
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        document.getElementById('feeList').innerHTML =
+          '<tr><td colspan="7" class="text-center text-muted">API 연결 후 데이터가 표시됩니다.</td></tr>';
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

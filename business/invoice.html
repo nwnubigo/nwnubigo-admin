@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>청구서 관리 - 남원시 농촌관광</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div class="sidebar-overlay" onclick="Utils.closeSidebar()"></div>
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>&#127793; 남원시 농촌관광</h2>
+        <div class="user-info" id="userInfo">경영체</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">나의 관리</div>
+        <a class="nav-item" href="dashboard.html"><span class="icon">&#128202;</span> 대시보드</a>
+        <a class="nav-item" href="estimate.html"><span class="icon">&#128196;</span> 견적서 관리</a>
+        <a class="nav-item active" href="invoice.html"><span class="icon">&#128203;</span> 청구서 관리</a>
+        <a class="nav-item" href="marketing-fee.html"><span class="icon">&#128176;</span> 공동마케팅비</a>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <header class="top-header">
+        <div class="d-flex align-center gap-1">
+          <button class="menu-toggle" onclick="Utils.toggleSidebar()">&#9776;</button>
+          <span class="page-title">청구서 관리</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" onclick="Auth.logout()">로그아웃</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- 보완요청 알림 -->
+        <div id="supplementAlert" class="hidden">
+          <div class="card mb-2" style="padding:12px 16px;background:#FFCDD2;border:1px solid #EF9A9A">
+            &#9888;&#65039; 청구서 <strong>보완요청</strong>이 있습니다. 아래 목록에서 확인 후 재제출해주세요.
+          </div>
+        </div>
+
+        <div class="card mb-2" style="padding:12px 16px;background:#E3F2FD;border:1px solid #BBDEFB;font-size:13px">
+          <strong>안내:</strong> 관광객 퇴실 후 3일 이내에 제출해주세요.<br>
+          - <strong>숙박업소:</strong> 참석자 명부를 업로드<br>
+          - <strong>체험업소:</strong> 체험 사진을 각 체험별 최소 4장 이상, 반드시 가로 형태로 촬영하여 업로드
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" data-status="" onclick="switchTab(this)">전체</div>
+          <div class="tab" data-status="미검토" onclick="switchTab(this)">미검토</div>
+          <div class="tab" data-status="검토완료" onclick="switchTab(this)">검토완료</div>
+          <div class="tab" data-status="보완요청" onclick="switchTab(this)">보완요청</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>청구서 목록 (<span id="totalCount">0</span>건)</h3>
+            <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ 청구서 제출</button>
+          </div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>청구서ID</th>
+                    <th>견적서ID</th>
+                    <th>제출일</th>
+                    <th>참석자명부</th>
+                    <th>체험사진</th>
+                    <th>검토상태</th>
+                    <th>검토메모</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+                <tbody id="invoiceList">
+                  <tr><td colspan="8" class="text-center text-muted">데이터를 불러오는 중...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 청구서 제출/수정 모달 -->
+  <div class="modal-overlay" id="invoiceModal">
+    <div class="modal" style="max-width:600px">
+      <div class="modal-header">
+        <h3 id="modalTitle">청구서 제출</h3>
+        <button class="modal-close" onclick="Utils.closeModal('invoiceModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="invoiceForm">
+          <input type="hidden" name="청구서ID" id="editInvoiceId">
+          <input type="hidden" name="경영체ID" id="formBusinessId">
+          <input type="hidden" name="경영체유형" id="formBusinessType">
+
+          <div class="form-group">
+            <label class="required">견적서 ID</label>
+            <select name="견적서ID" class="form-control" required id="estimateSelect">
+              <option value="">견적서를 선택하세요</option>
+            </select>
+          </div>
+
+          <!-- 숙박업소: 참석자 명부 -->
+          <div class="form-group" id="attendeeUploadGroup">
+            <label>참석자 명부 업로드</label>
+            <div class="file-upload" onclick="document.getElementById('attendeeFile').click()">
+              <div class="upload-icon">&#128196;</div>
+              <div class="upload-text">클릭하여 참석자 명부 파일을 선택하세요</div>
+              <div class="upload-text text-muted" id="attendeeFileName"></div>
+            </div>
+            <input type="file" id="attendeeFile" accept="image/*,.pdf,.xlsx,.xls" style="display:none" onchange="handleFileSelect(this, 'attendeeFileName')">
+          </div>
+
+          <!-- 체험업소: 체험 사진 -->
+          <div class="form-group" id="photoUploadGroup">
+            <label>체험 사진 업로드 (최소 4장, 가로 촬영)</label>
+            <div class="file-upload" onclick="document.getElementById('photoFiles').click()">
+              <div class="upload-icon">&#128247;</div>
+              <div class="upload-text">클릭하여 체험 사진을 선택하세요 (다중 선택 가능)</div>
+              <div class="upload-text text-muted" id="photoFileNames"></div>
+            </div>
+            <input type="file" id="photoFiles" accept="image/*" multiple style="display:none" onchange="handleMultiFileSelect(this, 'photoFileNames')">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="Utils.closeModal('invoiceModal')">취소</button>
+        <button class="btn btn-primary" onclick="submitInvoice()">제출</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    if (!Auth.requireAuth('business')) window.location.href = '../index.html';
+    document.getElementById('userInfo').textContent = Auth.getUserName();
+
+    const businessId = Auth.getBusinessId();
+    const user = Auth.getUser();
+    const businessType = user.businessType || '숙박';
+
+    document.getElementById('formBusinessId').value = businessId;
+    document.getElementById('formBusinessType').value = businessType;
+
+    let allInvoices = [];
+    let allEstimates = [];
+    let currentStatusFilter = '';
+
+    async function loadData() {
+      try {
+        const [invResult, estResult] = await Promise.all([
+          API.getInvoiceList(businessId),
+          API.getEstimateList(businessId)
+        ]);
+        allInvoices = invResult.data || [];
+        allEstimates = estResult.data || [];
+
+        // 보완요청 알림
+        const supplements = allInvoices.filter(inv => inv['검토상태'] === '보완요청');
+        if (supplements.length > 0) {
+          document.getElementById('supplementAlert').classList.remove('hidden');
+        }
+
+        // 견적서 셀렉트
+        const select = document.getElementById('estimateSelect');
+        select.innerHTML = '<option value="">견적서를 선택하세요</option>';
+        allEstimates.filter(e => e['검토상태'] === '검토완료').forEach(e => {
+          select.innerHTML += `<option value="${e['견적서ID']}">${e['견적서ID']} - ${e['예약자명']} (${Utils.formatDate(e['체크인일'])})</option>`;
+        });
+
+        renderList(allInvoices);
+      } catch (error) {
+        document.getElementById('invoiceList').innerHTML =
+          '<tr><td colspan="8" class="text-center text-muted">API 연결 후 데이터가 표시됩니다.</td></tr>';
+      }
+    }
+
+    function renderList(data) {
+      document.getElementById('totalCount').textContent = data.length;
+      const tbody = document.getElementById('invoiceList');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">청구서가 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(inv => `
+        <tr style="${inv['검토상태']==='보완요청'?'background:#FFF3E0':''}">
+          <td>${inv['청구서ID']}</td>
+          <td>${inv['견적서ID']}</td>
+          <td>${Utils.formatDate(inv['제출일'])}</td>
+          <td>${inv['참석자명부경로'] ? '<a href="'+inv['참석자명부경로']+'" target="_blank" class="text-success">제출완료</a>' : '<span class="text-muted">미제출</span>'}</td>
+          <td>${inv['체험사진경로들'] ? '<span class="text-success">제출완료</span>' : '<span class="text-muted">미제출</span>'}</td>
+          <td>${Utils.getBadgeHtml(inv['검토상태'])}</td>
+          <td style="max-width:200px;white-space:normal;word-break:break-all">${inv['검토결과메모'] || '-'}</td>
+          <td>
+            ${inv['검토상태'] === '보완요청' ? `<button class="btn btn-sm btn-secondary" onclick="resubmitInvoice('${inv['청구서ID']}')">재제출</button>` : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function switchTab(el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      currentStatusFilter = el.dataset.status;
+      filterList();
+    }
+
+    function filterList() {
+      let filtered = allInvoices;
+      if (currentStatusFilter) filtered = filtered.filter(inv => inv['검토상태'] === currentStatusFilter);
+      renderList(filtered);
+    }
+
+    function handleFileSelect(input, displayId) {
+      if (input.files.length > 0) {
+        document.getElementById(displayId).textContent = input.files[0].name;
+      }
+    }
+
+    function handleMultiFileSelect(input, displayId) {
+      if (input.files.length > 0) {
+        const names = Array.from(input.files).map(f => f.name).join(', ');
+        document.getElementById(displayId).textContent = `${input.files.length}개 파일: ${names}`;
+      }
+    }
+
+    function openAddModal() {
+      document.getElementById('modalTitle').textContent = '청구서 제출';
+      document.getElementById('invoiceForm').reset();
+      document.getElementById('editInvoiceId').value = '';
+      document.getElementById('formBusinessId').value = businessId;
+      document.getElementById('formBusinessType').value = businessType;
+      document.getElementById('attendeeFileName').textContent = '';
+      document.getElementById('photoFileNames').textContent = '';
+      Utils.openModal('invoiceModal');
+    }
+
+    function resubmitInvoice(invoiceId) {
+      const inv = allInvoices.find(i => i['청구서ID'] === invoiceId);
+      if (!inv) return;
+      document.getElementById('modalTitle').textContent = '청구서 재제출';
+      document.getElementById('editInvoiceId').value = invoiceId;
+      document.querySelector('[name="견적서ID"]').value = inv['견적서ID'];
+      document.getElementById('formBusinessId').value = businessId;
+      document.getElementById('formBusinessType').value = businessType;
+      document.getElementById('attendeeFileName').textContent = '';
+      document.getElementById('photoFileNames').textContent = '';
+      Utils.openModal('invoiceModal');
+    }
+
+    // 파일을 Base64로 변환
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function submitInvoice() {
+      const data = Utils.getFormData('invoiceForm');
+      if (!data['견적서ID']) {
+        Utils.showToast('견적서를 선택하세요.', 'warning');
+        return;
+      }
+
+      Utils.showLoading();
+      try {
+        // 참석자 명부 업로드
+        const attendeeFile = document.getElementById('attendeeFile').files[0];
+        if (attendeeFile) {
+          const base64 = await fileToBase64(attendeeFile);
+          const uploadResult = await API.uploadFile(base64, attendeeFile.name, CONFIG.DRIVE_FOLDERS.INVOICES);
+          data['참석자명부경로'] = uploadResult.data.fileUrl;
+        }
+
+        // 체험 사진 업로드
+        const photoFiles = document.getElementById('photoFiles').files;
+        if (photoFiles.length > 0) {
+          const urls = [];
+          for (const file of photoFiles) {
+            const base64 = await fileToBase64(file);
+            const uploadResult = await API.uploadFile(base64, file.name, CONFIG.DRIVE_FOLDERS.PHOTOS);
+            urls.push(uploadResult.data.fileUrl);
+          }
+          data['체험사진경로들'] = urls.join(',');
+        }
+
+        data['경영체ID'] = businessId;
+        data['경영체유형'] = businessType;
+        await API.saveInvoice(data);
+        Utils.showToast('청구서가 제출되었습니다.', 'success');
+        Utils.closeModal('invoiceModal');
+        loadData();
+      } catch (error) {
+        Utils.showToast(error.message, 'error');
+      } finally {
+        Utils.hideLoading();
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

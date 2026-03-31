@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>경영체 관리 - 남원시 농촌관광</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div class="sidebar-overlay" onclick="Utils.closeSidebar()"></div>
+
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>&#127793; 남원시 농촌관광</h2>
+        <div class="user-info" id="userInfo">관리자</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">관리</div>
+        <a class="nav-item" href="dashboard.html"><span class="icon">&#128202;</span> 대시보드</a>
+        <a class="nav-item active" href="business-manage.html"><span class="icon">&#127970;</span> 경영체 관리</a>
+        <a class="nav-item" href="program-manage.html"><span class="icon">&#127915;</span> 프로그램 관리</a>
+        <div class="nav-section">견적/청구</div>
+        <a class="nav-item" href="estimate-review.html"><span class="icon">&#128196;</span> 견적서 검토</a>
+        <a class="nav-item" href="invoice-review.html"><span class="icon">&#128203;</span> 청구서 검토</a>
+        <div class="nav-section">정산</div>
+        <a class="nav-item" href="payment-manage.html"><span class="icon">&#128179;</span> 프로그램비 지급</a>
+        <a class="nav-item" href="marketing-fee.html"><span class="icon">&#128176;</span> 공동마케팅비</a>
+        <a class="nav-item" href="membership-fee.html"><span class="icon">&#128181;</span> 회비 관리</a>
+        <div class="nav-section">기타</div>
+        <a class="nav-item" href="event-manage.html"><span class="icon">&#128197;</span> 행사 관리</a>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <header class="top-header">
+        <div class="d-flex align-center gap-1">
+          <button class="menu-toggle" onclick="Utils.toggleSidebar()">&#9776;</button>
+          <span class="page-title">경영체 관리</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" onclick="Auth.logout()">로그아웃</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- 검색/필터 -->
+        <div class="filter-bar">
+          <div class="search-input">
+            <input type="text" id="searchInput" placeholder="경영체명, 대표자명으로 검색..." onkeyup="filterList()">
+          </div>
+          <select class="form-control" style="width:auto;min-width:120px" id="filterType" onchange="filterList()">
+            <option value="">전체 유형</option>
+            <option value="숙박">숙박</option>
+            <option value="체험">체험</option>
+            <option value="식사">식사</option>
+            <option value="복합">복합</option>
+          </select>
+          <select class="form-control" style="width:auto;min-width:120px" id="filterStatus" onchange="filterList()">
+            <option value="">전체 상태</option>
+            <option value="활성">활성</option>
+            <option value="비활성">비활성</option>
+          </select>
+          <button class="btn btn-primary" onclick="openAddModal()">+ 경영체 등록</button>
+        </div>
+
+        <!-- 경영체 목록 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>경영체 목록 (<span id="totalCount">0</span>건)</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table id="businessTable">
+                <thead>
+                  <tr>
+                    <th>경영체ID</th>
+                    <th>경영체명</th>
+                    <th>유형</th>
+                    <th>대표자명</th>
+                    <th>연락처</th>
+                    <th>상태</th>
+                    <th>등록일</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+                <tbody id="businessList">
+                  <tr><td colspan="8" class="text-center text-muted">데이터를 불러오는 중...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 경영체 등록/수정 모달 -->
+  <div class="modal-overlay" id="businessModal">
+    <div class="modal" style="max-width:700px">
+      <div class="modal-header">
+        <h3 id="modalTitle">경영체 등록</h3>
+        <button class="modal-close" onclick="Utils.closeModal('businessModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="businessForm">
+          <input type="hidden" name="경영체ID" id="editBusinessId">
+
+          <div class="d-flex gap-2 flex-wrap">
+            <div class="form-group" style="flex:1;min-width:200px">
+              <label class="required">경영체명</label>
+              <input type="text" name="경영체명" class="form-control" required>
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px">
+              <label class="required">경영체 유형</label>
+              <select name="경영체유형" class="form-control" required>
+                <option value="">선택하세요</option>
+                <option value="숙박">숙박</option>
+                <option value="체험">체험</option>
+                <option value="식사">식사</option>
+                <option value="복합">복합</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <div class="form-group" style="flex:1;min-width:200px">
+              <label class="required">대표자명</label>
+              <input type="text" name="대표자명" class="form-control" required>
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px">
+              <label>사업자등록번호</label>
+              <input type="text" name="사업자등록번호" class="form-control" placeholder="000-00-00000">
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <div class="form-group" style="flex:1;min-width:200px">
+              <label class="required">연락처 (로그인 ID)</label>
+              <input type="tel" name="연락처" class="form-control" placeholder="010-0000-0000" required>
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px">
+              <label>이메일</label>
+              <input type="email" name="이메일" class="form-control" placeholder="email@example.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>주소</label>
+            <input type="text" name="주소" class="form-control" placeholder="전북특별자치도 남원시...">
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <div class="form-group" style="flex:1;min-width:200px">
+              <label>비밀번호</label>
+              <input type="password" name="비밀번호" class="form-control" placeholder="미입력시 기본값: 1234">
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px">
+              <label>권한</label>
+              <select name="권한" class="form-control">
+                <option value="business">경영체</option>
+                <option value="admin">관리자</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>네이버 플레이스 URL</label>
+            <input type="url" name="네이버플레이스URL" class="form-control" placeholder="https://map.naver.com/...">
+          </div>
+
+          <div class="form-group">
+            <label>네이버 플레이스 ID</label>
+            <input type="text" name="네이버플레이스ID" class="form-control" placeholder="네이버 플레이스 ID">
+          </div>
+
+          <div class="form-group">
+            <label>소개글</label>
+            <textarea name="소개글" class="form-control" rows="3" placeholder="경영체 소개글을 입력하세요"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>상태</label>
+            <select name="상태" class="form-control">
+              <option value="활성">활성</option>
+              <option value="비활성">비활성</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="Utils.closeModal('businessModal')">취소</button>
+        <button class="btn btn-primary" onclick="saveBusiness()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    if (!Auth.requireAuth('admin')) window.location.href = '../index.html';
+    document.getElementById('userInfo').textContent = Auth.getUserName() + ' (관리자)';
+
+    let allBusinesses = [];
+
+    // 데이터 로드
+    async function loadBusinessList() {
+      try {
+        const result = await API.getBusinessList();
+        allBusinesses = result.data || [];
+        renderList(allBusinesses);
+      } catch (error) {
+        console.error('경영체 목록 로드 실패:', error);
+        document.getElementById('businessList').innerHTML =
+          '<tr><td colspan="8" class="text-center text-muted">API 연결 후 데이터가 표시됩니다.</td></tr>';
+      }
+    }
+
+    // 목록 렌더링
+    function renderList(data) {
+      document.getElementById('totalCount').textContent = data.length;
+      const tbody = document.getElementById('businessList');
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">등록된 경영체가 없습니다.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.map(b => `
+        <tr>
+          <td>${b['경영체ID']}</td>
+          <td><strong>${b['경영체명']}</strong></td>
+          <td>${b['경영체유형']}</td>
+          <td>${b['대표자명']}</td>
+          <td>${Utils.formatPhone(b['연락처'])}</td>
+          <td>${Utils.getBadgeHtml(b['상태'])}</td>
+          <td>${Utils.formatDate(b['등록일'])}</td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="editBusiness('${b['경영체ID']}')">수정</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteBusiness('${b['경영체ID']}', '${b['경영체명']}')">비활성</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // 필터
+    function filterList() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const type = document.getElementById('filterType').value;
+      const status = document.getElementById('filterStatus').value;
+
+      let filtered = allBusinesses;
+      if (search) {
+        filtered = filtered.filter(b =>
+          (b['경영체명'] || '').toLowerCase().includes(search) ||
+          (b['대표자명'] || '').toLowerCase().includes(search)
+        );
+      }
+      if (type) filtered = filtered.filter(b => b['경영체유형'] === type);
+      if (status) filtered = filtered.filter(b => b['상태'] === status);
+
+      renderList(filtered);
+    }
+
+    // 등록 모달 열기
+    function openAddModal() {
+      document.getElementById('modalTitle').textContent = '경영체 등록';
+      document.getElementById('businessForm').reset();
+      document.getElementById('editBusinessId').value = '';
+      Utils.openModal('businessModal');
+    }
+
+    // 수정 모달 열기
+    function editBusiness(businessId) {
+      const biz = allBusinesses.find(b => b['경영체ID'] === businessId);
+      if (!biz) return;
+
+      document.getElementById('modalTitle').textContent = '경영체 수정';
+      Utils.fillForm('businessForm', biz);
+      document.getElementById('editBusinessId').value = businessId;
+      Utils.openModal('businessModal');
+    }
+
+    // 저장
+    async function saveBusiness() {
+      const data = Utils.getFormData('businessForm');
+      if (!data['경영체명'] || !data['대표자명'] || !data['연락처']) {
+        Utils.showToast('필수 항목을 입력하세요.', 'warning');
+        return;
+      }
+
+      Utils.showLoading();
+      try {
+        await API.saveBusiness(data);
+        Utils.showToast(data['경영체ID'] ? '수정되었습니다.' : '등록되었습니다.', 'success');
+        Utils.closeModal('businessModal');
+        await loadBusinessList();
+      } catch (error) {
+        Utils.showToast(error.message, 'error');
+      } finally {
+        Utils.hideLoading();
+      }
+    }
+
+    // 비활성화
+    async function deleteBusiness(businessId, name) {
+      if (!await Utils.confirm(`'${name}' 경영체를 비활성화하시겠습니까?`)) return;
+
+      Utils.showLoading();
+      try {
+        await API.deleteBusiness(businessId);
+        Utils.showToast('비활성화되었습니다.', 'success');
+        await loadBusinessList();
+      } catch (error) {
+        Utils.showToast(error.message, 'error');
+      } finally {
+        Utils.hideLoading();
+      }
+    }
+
+    loadBusinessList();
+  </script>
+</body>
+</html>

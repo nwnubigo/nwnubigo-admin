@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>경영체 대시보드 - 남원시 농촌관광</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div class="sidebar-overlay" onclick="Utils.closeSidebar()"></div>
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>&#127793; 남원시 농촌관광</h2>
+        <div class="user-info" id="userInfo">경영체</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">나의 관리</div>
+        <a class="nav-item active" href="dashboard.html"><span class="icon">&#128202;</span> 대시보드</a>
+        <a class="nav-item" href="estimate.html"><span class="icon">&#128196;</span> 견적서 관리</a>
+        <a class="nav-item" href="invoice.html"><span class="icon">&#128203;</span> 청구서 관리</a>
+        <a class="nav-item" href="marketing-fee.html"><span class="icon">&#128176;</span> 공동마케팅비</a>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <header class="top-header">
+        <div class="d-flex align-center gap-1">
+          <button class="menu-toggle" onclick="Utils.toggleSidebar()">&#9776;</button>
+          <span class="page-title">대시보드</span>
+        </div>
+        <div class="header-actions">
+          <span class="text-muted" id="currentDate"></span>
+          <button class="btn btn-outline btn-sm" onclick="Auth.logout()">로그아웃</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- 알림 영역 -->
+        <div id="alertArea"></div>
+
+        <!-- 통계 카드 -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">&#128203;</div>
+            <div class="stat-value" id="statReservations">-</div>
+            <div class="stat-label">미처리 예약</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">&#128196;</div>
+            <div class="stat-value" id="statEstimates">-</div>
+            <div class="stat-label">견적서 대기</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">&#128203;</div>
+            <div class="stat-value" id="statInvoices">-</div>
+            <div class="stat-label">청구서 미제출</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">&#128179;</div>
+            <div class="stat-value" id="statPayments">-</div>
+            <div class="stat-label">총 지급금액</div>
+          </div>
+        </div>
+
+        <!-- 빠른 메뉴 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>빠른 메뉴</h3>
+          </div>
+          <div class="card-body">
+            <div class="d-flex gap-1 flex-wrap">
+              <a href="estimate.html" class="btn btn-primary">견적서 관리</a>
+              <a href="invoice.html" class="btn btn-secondary">청구서 관리</a>
+              <a href="marketing-fee.html" class="btn btn-outline">공동마케팅비 확인</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 최근 예약 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>최근 예약 현황</h3>
+            <a href="estimate.html" class="btn btn-sm btn-outline">전체 보기</a>
+          </div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>예약번호</th>
+                    <th>예약자명</th>
+                    <th>체크인</th>
+                    <th>인원</th>
+                    <th>금액</th>
+                    <th>견적서</th>
+                  </tr>
+                </thead>
+                <tbody id="recentReservations">
+                  <tr><td colspan="6" class="text-center text-muted">데이터를 불러오는 중...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    if (!Auth.requireAuth('business')) window.location.href = '../index.html';
+    document.getElementById('userInfo').textContent = Auth.getUserName();
+    document.getElementById('currentDate').textContent = Utils.formatDate(new Date());
+
+    const businessId = Auth.getBusinessId();
+
+    async function loadDashboard() {
+      try {
+        const [statsResult, resResult] = await Promise.all([
+          API.getDashboardStats(businessId),
+          API.getReservations(businessId)
+        ]);
+
+        const stats = statsResult.data;
+        document.getElementById('statReservations').textContent = stats.unprocessedReservations || 0;
+        document.getElementById('statEstimates').textContent = stats.pendingEstimates || 0;
+        document.getElementById('statInvoices').textContent = stats.pendingInvoices || 0;
+        document.getElementById('statPayments').textContent = Utils.formatCurrency(stats.totalPayments || 0);
+
+        // 알림
+        const alerts = [];
+        if (stats.unprocessedReservations > 0) {
+          alerts.push('견적서 처리가 필요한 예약 ' + stats.unprocessedReservations + '건이 있습니다.');
+        }
+        if (stats.supplementRequests > 0) {
+          alerts.push('청구서 보완요청 ' + stats.supplementRequests + '건이 있습니다. 확인해주세요.');
+        }
+        const alertArea = document.getElementById('alertArea');
+        if (alerts.length > 0) {
+          alertArea.innerHTML = alerts.map(a =>
+            `<div class="card mb-1" style="padding:12px 16px;background:#FFF3E0;border:1px solid #FFE0B2">&#9888;&#65039; ${a}</div>`
+          ).join('');
+        }
+
+        // 최근 예약
+        const reservations = (resResult.data || []).slice(-5).reverse();
+        const tbody = document.getElementById('recentReservations');
+        if (reservations.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">최근 예약이 없습니다.</td></tr>';
+        } else {
+          tbody.innerHTML = reservations.map(r => `
+            <tr>
+              <td>${r['예약번호'] || '-'}</td>
+              <td><strong>${r['예약자명']}</strong></td>
+              <td>${Utils.formatDate(r['체크인일'])}</td>
+              <td>${r['예약인원']}명</td>
+              <td class="text-right">${Utils.formatCurrency(r['예약금액'])}</td>
+              <td>${Utils.getBadgeHtml(r['견적서처리여부'])}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('대시보드 로드 실패:', error);
+        document.getElementById('statReservations').textContent = '0';
+        document.getElementById('statEstimates').textContent = '0';
+        document.getElementById('statInvoices').textContent = '0';
+        document.getElementById('statPayments').textContent = '0원';
+        document.getElementById('recentReservations').innerHTML =
+          '<tr><td colspan="6" class="text-center text-muted">API 연결 후 데이터가 표시됩니다.</td></tr>';
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

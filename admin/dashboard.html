@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 대시보드 - 남원시 농촌관광</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- 사이드바 오버레이 (모바일) -->
+    <div class="sidebar-overlay" onclick="Utils.closeSidebar()"></div>
+
+    <!-- 사이드바 -->
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>&#127793; 남원시 농촌관광</h2>
+        <div class="user-info" id="userInfo">관리자</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">관리</div>
+        <a class="nav-item active" href="dashboard.html">
+          <span class="icon">&#128202;</span> 대시보드
+        </a>
+        <a class="nav-item" href="business-manage.html">
+          <span class="icon">&#127970;</span> 경영체 관리
+        </a>
+        <a class="nav-item" href="program-manage.html">
+          <span class="icon">&#127915;</span> 프로그램 관리
+        </a>
+
+        <div class="nav-section">견적/청구</div>
+        <a class="nav-item" href="estimate-review.html">
+          <span class="icon">&#128196;</span> 견적서 검토
+        </a>
+        <a class="nav-item" href="invoice-review.html">
+          <span class="icon">&#128203;</span> 청구서 검토
+        </a>
+
+        <div class="nav-section">정산</div>
+        <a class="nav-item" href="payment-manage.html">
+          <span class="icon">&#128179;</span> 프로그램비 지급
+        </a>
+        <a class="nav-item" href="marketing-fee.html">
+          <span class="icon">&#128176;</span> 공동마케팅비
+        </a>
+        <a class="nav-item" href="membership-fee.html">
+          <span class="icon">&#128181;</span> 회비 관리
+        </a>
+
+        <div class="nav-section">기타</div>
+        <a class="nav-item" href="event-manage.html">
+          <span class="icon">&#128197;</span> 행사 관리
+        </a>
+      </div>
+    </nav>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="main-content">
+      <header class="top-header">
+        <div class="d-flex align-center gap-1">
+          <button class="menu-toggle" onclick="Utils.toggleSidebar()">&#9776;</button>
+          <span class="page-title">대시보드</span>
+        </div>
+        <div class="header-actions">
+          <span class="text-muted" id="currentDate"></span>
+          <button class="btn btn-outline btn-sm" onclick="Auth.logout()">로그아웃</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- 통계 카드 -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">&#127970;</div>
+            <div class="stat-value" id="statBusinesses">-</div>
+            <div class="stat-label">활성 경영체</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">&#128203;</div>
+            <div class="stat-value" id="statReservations">-</div>
+            <div class="stat-label">미처리 예약</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">&#128196;</div>
+            <div class="stat-value" id="statEstimates">-</div>
+            <div class="stat-label">견적서 검토 대기</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">&#128203;</div>
+            <div class="stat-value" id="statInvoices">-</div>
+            <div class="stat-label">청구서 검토 대기</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">&#128179;</div>
+            <div class="stat-value" id="statUnpaid">-</div>
+            <div class="stat-label">미결제 건</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">&#128176;</div>
+            <div class="stat-value" id="statTotalSupport">-</div>
+            <div class="stat-label">총 지원금액</div>
+          </div>
+        </div>
+
+        <!-- 최근 알림 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>처리 필요 사항</h3>
+          </div>
+          <div class="card-body">
+            <div id="alertList">
+              <p class="text-muted">데이터를 불러오는 중...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 빠른 메뉴 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>빠른 메뉴</h3>
+          </div>
+          <div class="card-body">
+            <div class="d-flex gap-1 flex-wrap">
+              <a href="business-manage.html" class="btn btn-primary">경영체 등록</a>
+              <a href="estimate-review.html" class="btn btn-secondary">견적서 검토</a>
+              <a href="invoice-review.html" class="btn btn-outline">청구서 검토</a>
+              <a href="payment-manage.html" class="btn btn-outline">프로그램비 지급</a>
+              <a href="event-manage.html" class="btn btn-outline">행사 관리</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    // 인증 확인
+    if (!Auth.requireAuth('admin')) {
+      window.location.href = '../index.html';
+    }
+
+    document.getElementById('userInfo').textContent = Auth.getUserName() + ' (관리자)';
+    document.getElementById('currentDate').textContent = Utils.formatDate(new Date());
+
+    // 대시보드 데이터 로드
+    async function loadDashboard() {
+      try {
+        const result = await API.getDashboardStats();
+        const stats = result.data;
+
+        document.getElementById('statBusinesses').textContent = stats.totalBusinesses || 0;
+        document.getElementById('statReservations').textContent = stats.unprocessedReservations || 0;
+        document.getElementById('statEstimates').textContent = stats.pendingEstimateReview || 0;
+        document.getElementById('statInvoices').textContent = stats.pendingInvoiceReview || 0;
+        document.getElementById('statUnpaid').textContent = stats.unpaidPayments || 0;
+        document.getElementById('statTotalSupport').textContent = Utils.formatCurrency(stats.totalSupportAmount || 0);
+
+        // 알림 목록
+        const alerts = [];
+        if (stats.unprocessedReservations > 0) {
+          alerts.push(`미처리 예약 ${stats.unprocessedReservations}건이 있습니다.`);
+        }
+        if (stats.pendingEstimateReview > 0) {
+          alerts.push(`견적서 검토 대기 ${stats.pendingEstimateReview}건이 있습니다.`);
+        }
+        if (stats.pendingInvoiceReview > 0) {
+          alerts.push(`청구서 검토 대기 ${stats.pendingInvoiceReview}건이 있습니다.`);
+        }
+        if (stats.unpaidPayments > 0) {
+          alerts.push(`프로그램비 미결제 ${stats.unpaidPayments}건이 있습니다.`);
+        }
+
+        const alertList = document.getElementById('alertList');
+        if (alerts.length > 0) {
+          alertList.innerHTML = alerts.map(a =>
+            `<div style="padding:8px 12px;margin-bottom:8px;background:#FFF3E0;border-radius:4px;font-size:14px;">&#9888;&#65039; ${a}</div>`
+          ).join('');
+        } else {
+          alertList.innerHTML = '<p class="text-muted">현재 처리할 사항이 없습니다.</p>';
+        }
+      } catch (error) {
+        console.error('대시보드 로드 실패:', error);
+        // API 미연결 시 샘플 데이터 표시
+        document.getElementById('statBusinesses').textContent = '0';
+        document.getElementById('statReservations').textContent = '0';
+        document.getElementById('statEstimates').textContent = '0';
+        document.getElementById('statInvoices').textContent = '0';
+        document.getElementById('statUnpaid').textContent = '0';
+        document.getElementById('statTotalSupport').textContent = '0원';
+        document.getElementById('alertList').innerHTML =
+          '<p class="text-muted">API 연결 후 데이터가 표시됩니다. config.js에서 API URL을 설정하세요.</p>';
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

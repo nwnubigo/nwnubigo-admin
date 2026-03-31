@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>견적서 검토 - 남원시 농촌관광</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div class="sidebar-overlay" onclick="Utils.closeSidebar()"></div>
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>&#127793; 남원시 농촌관광</h2>
+        <div class="user-info" id="userInfo">관리자</div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">관리</div>
+        <a class="nav-item" href="dashboard.html"><span class="icon">&#128202;</span> 대시보드</a>
+        <a class="nav-item" href="business-manage.html"><span class="icon">&#127970;</span> 경영체 관리</a>
+        <a class="nav-item" href="program-manage.html"><span class="icon">&#127915;</span> 프로그램 관리</a>
+        <div class="nav-section">견적/청구</div>
+        <a class="nav-item active" href="estimate-review.html"><span class="icon">&#128196;</span> 견적서 검토</a>
+        <a class="nav-item" href="invoice-review.html"><span class="icon">&#128203;</span> 청구서 검토</a>
+        <div class="nav-section">정산</div>
+        <a class="nav-item" href="payment-manage.html"><span class="icon">&#128179;</span> 프로그램비 지급</a>
+        <a class="nav-item" href="marketing-fee.html"><span class="icon">&#128176;</span> 공동마케팅비</a>
+        <a class="nav-item" href="membership-fee.html"><span class="icon">&#128181;</span> 회비 관리</a>
+        <div class="nav-section">기타</div>
+        <a class="nav-item" href="event-manage.html"><span class="icon">&#128197;</span> 행사 관리</a>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <header class="top-header">
+        <div class="d-flex align-center gap-1">
+          <button class="menu-toggle" onclick="Utils.toggleSidebar()">&#9776;</button>
+          <span class="page-title">견적서 검토</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" onclick="Auth.logout()">로그아웃</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <div class="tabs">
+          <div class="tab active" data-status="" onclick="switchTab(this)">전체</div>
+          <div class="tab" data-status="미검토" onclick="switchTab(this)">미검토</div>
+          <div class="tab" data-status="검토완료" onclick="switchTab(this)">검토완료</div>
+          <div class="tab" data-status="보완요청" onclick="switchTab(this)">보완요청</div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="search-input">
+            <input type="text" id="searchInput" placeholder="예약자명, 견적서번호로 검색..." onkeyup="filterList()">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>견적서 목록 (<span id="totalCount">0</span>건)</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>견적서ID</th>
+                    <th>예약자명</th>
+                    <th>숙박 경영체</th>
+                    <th>체험 경영체</th>
+                    <th>체크인</th>
+                    <th>인원</th>
+                    <th>총금액</th>
+                    <th>지원금(30%)</th>
+                    <th>발행일</th>
+                    <th>검토상태</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
+                <tbody id="estimateList">
+                  <tr><td colspan="11" class="text-center text-muted">데이터를 불러오는 중...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 견적서 상세/검토 모달 -->
+  <div class="modal-overlay" id="reviewModal">
+    <div class="modal" style="max-width:650px">
+      <div class="modal-header">
+        <h3>견적서 검토</h3>
+        <button class="modal-close" onclick="Utils.closeModal('reviewModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="estimateDetail"></div>
+        <hr style="margin:16px 0;border-color:var(--border)">
+        <div class="form-group">
+          <label class="required">검토 결과</label>
+          <select id="reviewStatus" class="form-control">
+            <option value="검토완료">검토완료</option>
+            <option value="보완요청">보완요청</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>검토 메모</label>
+          <textarea id="reviewMemo" class="form-control" rows="3" placeholder="검토 의견을 입력하세요"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a id="estimateFileLink" href="#" target="_blank" class="btn btn-outline" style="display:none">견적서 파일 보기</a>
+        <button class="btn btn-outline" onclick="Utils.closeModal('reviewModal')">취소</button>
+        <button class="btn btn-primary" onclick="submitReview()">검토 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    if (!Auth.requireAuth('admin')) window.location.href = '../index.html';
+    document.getElementById('userInfo').textContent = Auth.getUserName() + ' (관리자)';
+
+    let allEstimates = [];
+    let allBusinesses = [];
+    let currentStatusFilter = '';
+    let currentEstimateId = '';
+
+    async function loadData() {
+      try {
+        const [estResult, bizResult] = await Promise.all([
+          API.getEstimateList(),
+          API.getBusinessList()
+        ]);
+        allEstimates = estResult.data || [];
+        allBusinesses = bizResult.data || [];
+        renderList(allEstimates);
+      } catch (error) {
+        document.getElementById('estimateList').innerHTML =
+          '<tr><td colspan="11" class="text-center text-muted">API 연결 후 데이터가 표시됩니다.</td></tr>';
+      }
+    }
+
+    function getBizName(id) {
+      const b = allBusinesses.find(b => b['경영체ID'] === id);
+      return b ? b['경영체명'] : id || '-';
+    }
+
+    function renderList(data) {
+      document.getElementById('totalCount').textContent = data.length;
+      const tbody = document.getElementById('estimateList');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">견적서가 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(e => `
+        <tr>
+          <td>${e['견적서ID']}</td>
+          <td><strong>${e['예약자명']}</strong></td>
+          <td>${getBizName(e['경영체ID_숙박'])}</td>
+          <td>${getBizName(e['경영체ID_체험'])}</td>
+          <td>${Utils.formatDate(e['체크인일'])}</td>
+          <td>${e['예약인원']}명</td>
+          <td class="text-right">${Utils.formatCurrency(e['총금액'])}</td>
+          <td class="text-right text-success">${Utils.formatCurrency(e['지원금액'])}</td>
+          <td>${Utils.formatDate(e['발행일'])}</td>
+          <td>${Utils.getBadgeHtml(e['검토상태'])}</td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="openReview('${e['견적서ID']}')">검토</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function switchTab(el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      currentStatusFilter = el.dataset.status;
+      filterList();
+    }
+
+    function filterList() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      let filtered = allEstimates;
+      if (currentStatusFilter) filtered = filtered.filter(e => e['검토상태'] === currentStatusFilter);
+      if (search) {
+        filtered = filtered.filter(e =>
+          (e['예약자명'] || '').toLowerCase().includes(search) ||
+          (e['견적서ID'] || '').toLowerCase().includes(search)
+        );
+      }
+      renderList(filtered);
+    }
+
+    function openReview(estimateId) {
+      const est = allEstimates.find(e => e['견적서ID'] === estimateId);
+      if (!est) return;
+      currentEstimateId = estimateId;
+
+      document.getElementById('estimateDetail').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px">
+          <div><strong>견적서 번호:</strong> ${est['견적서ID']}</div>
+          <div><strong>발행일:</strong> ${Utils.formatDate(est['발행일'])}</div>
+          <div><strong>예약자명:</strong> ${est['예약자명']}</div>
+          <div><strong>예약인원:</strong> ${est['예약인원']}명</div>
+          <div><strong>체크인:</strong> ${Utils.formatDate(est['체크인일'])}</div>
+          <div><strong>체크아웃:</strong> ${Utils.formatDate(est['체크아웃일'])}</div>
+          <div><strong>숙박 경영체:</strong> ${getBizName(est['경영체ID_숙박'])}</div>
+          <div><strong>체험 경영체:</strong> ${getBizName(est['경영체ID_체험'])}</div>
+          <div><strong>총 금액:</strong> ${Utils.formatCurrency(est['총금액'])}</div>
+          <div><strong>지원금액 (30%):</strong> <span class="text-success">${Utils.formatCurrency(est['지원금액'])}</span></div>
+          <div><strong>관광객 부담금:</strong> ${Utils.formatCurrency(est['관광객부담금'])}</div>
+          <div><strong>현재 상태:</strong> ${Utils.getBadgeHtml(est['검토상태'])}</div>
+        </div>
+      `;
+
+      const fileLink = document.getElementById('estimateFileLink');
+      if (est['견적서파일경로']) {
+        fileLink.href = est['견적서파일경로'];
+        fileLink.style.display = 'inline-flex';
+      } else {
+        fileLink.style.display = 'none';
+      }
+
+      document.getElementById('reviewStatus').value = '검토완료';
+      document.getElementById('reviewMemo').value = '';
+      Utils.openModal('reviewModal');
+    }
+
+    async function submitReview() {
+      const status = document.getElementById('reviewStatus').value;
+      const memo = document.getElementById('reviewMemo').value;
+
+      Utils.showLoading();
+      try {
+        await API.reviewEstimate(currentEstimateId, status, memo);
+        Utils.showToast('검토가 완료되었습니다.', 'success');
+        Utils.closeModal('reviewModal');
+        const result = await API.getEstimateList();
+        allEstimates = result.data || [];
+        filterList();
+      } catch (error) {
+        Utils.showToast(error.message, 'error');
+      } finally {
+        Utils.hideLoading();
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

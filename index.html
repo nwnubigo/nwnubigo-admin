@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>남원시 농촌관광 관리시스템 - 로그인</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="logo">&#127793;</div>
+      <h1>남원시 농촌관광</h1>
+      <p class="subtitle">지역단위 농촌관광 통합 관리 시스템</p>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="phone">휴대폰 번호</label>
+          <input type="tel" id="phone" name="phone" class="form-control"
+                 placeholder="010-0000-0000" required
+                 pattern="[0-9]{3}-?[0-9]{3,4}-?[0-9]{4}"
+                 maxlength="13">
+        </div>
+
+        <div class="form-group">
+          <label for="password">비밀번호</label>
+          <input type="password" id="password" name="password" class="form-control"
+                 placeholder="비밀번호를 입력하세요" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg mt-2">
+          로그인
+        </button>
+      </form>
+
+      <div class="mt-2 text-center">
+        <small class="text-muted">관리자에게 문의: 063-XXX-XXXX</small>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // 이미 로그인되어 있으면 대시보드로 이동
+    if (Auth.init()) {
+      if (Auth.isAdmin()) {
+        window.location.href = 'admin/dashboard.html';
+      } else {
+        window.location.href = 'business/dashboard.html';
+      }
+    }
+
+    // 전화번호 자동 하이픈 입력
+    document.getElementById('phone').addEventListener('input', function(e) {
+      let val = e.target.value.replace(/\D/g, '');
+      if (val.length > 3 && val.length <= 7) {
+        val = val.replace(/(\d{3})(\d+)/, '$1-$2');
+      } else if (val.length > 7) {
+        val = val.replace(/(\d{3})(\d{4})(\d+)/, '$1-$2-$3');
+      }
+      e.target.value = val;
+    });
+
+    // 로그인 처리
+    async function handleLogin(e) {
+      e.preventDefault();
+      const phone = document.getElementById('phone').value.replace(/-/g, '');
+      const password = document.getElementById('password').value;
+
+      if (!phone || !password) {
+        Utils.showToast('휴대폰 번호와 비밀번호를 입력하세요.', 'warning');
+        return;
+      }
+
+      await Auth.login(phone, password);
+    }
+  </script>
+</body>
+</html>
