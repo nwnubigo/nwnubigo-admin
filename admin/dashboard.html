@@ -142,7 +142,7 @@
   <script>
     // 인증 확인
     if (!Auth.requireAuth('admin')) {
-      window.location.href = '../index.html';
+      window.location.href = '../login.html';
     }
 
     document.getElementById('userInfo').textContent = Auth.getUserName() + ' (관리자)';

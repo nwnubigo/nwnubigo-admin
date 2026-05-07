@@ -3,82 +3,538 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>남원시 농촌관광 관리시스템 - 로그인</title>
+  <title>남원누비고 관광상품</title>
+  <meta name="description" content="남원시 농촌관광 통합 브랜드 '남원누비고'의 1박 2일 관광상품 목록">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <div class="login-container">
-    <div class="login-card">
-      <div class="logo">&#127793;</div>
-      <h1>남원시 농촌관광</h1>
-      <p class="subtitle">지역단위 농촌관광 통합 관리 시스템</p>
-
-      <form id="loginForm" onsubmit="handleLogin(event)">
-        <div class="form-group">
-          <label for="phone">휴대폰 번호</label>
-          <input type="tel" id="phone" name="phone" class="form-control"
-                 placeholder="010-0000-0000" required
-                 pattern="[0-9]{3}-?[0-9]{3,4}-?[0-9]{4}"
-                 maxlength="13">
-        </div>
-
-        <div class="form-group">
-          <label for="password">비밀번호</label>
-          <input type="password" id="password" name="password" class="form-control"
-                 placeholder="비밀번호를 입력하세요" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-block btn-lg mt-2">
-          로그인
-        </button>
-      </form>
-
-      <div class="mt-2 text-center">
-        <small class="text-muted">관리자에게 문의: 063-XXX-XXXX</small>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/config.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/api.js"></script>
-  <script src="js/auth.js"></script>
-  <script>
-    // 이미 로그인되어 있으면 대시보드로 이동
-    if (Auth.init()) {
-      if (Auth.isAdmin()) {
-        window.location.href = 'admin/dashboard.html';
-      } else {
-        window.location.href = 'business/dashboard.html';
-      }
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2E7D32;
+      --primary-light: #4CAF50;
+      --primary-dark: #1B5E20;
+      --secondary: #FF8F00;
+      --bg: #F5F7F5;
+      --bg-white: #FFFFFF;
+      --text: #1F2A22;
+      --text-light: #6B7A70;
+      --border: #E4E9E5;
+      --danger: #D32F2F;
+      --shadow: 0 2px 8px rgba(20, 60, 30, 0.06);
+      --shadow-lg: 0 8px 24px rgba(20, 60, 30, 0.12);
+      --radius: 12px;
+      --radius-sm: 6px;
+      --radius-lg: 18px;
     }
 
-    // 전화번호 자동 하이픈 입력
-    document.getElementById('phone').addEventListener('input', function(e) {
-      let val = e.target.value.replace(/\D/g, '');
-      if (val.length > 3 && val.length <= 7) {
-        val = val.replace(/(\d{3})(\d+)/, '$1-$2');
-      } else if (val.length > 7) {
-        val = val.replace(/(\d{3})(\d{4})(\d+)/, '$1-$2-$3');
-      }
-      e.target.value = val;
-    });
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    // 로그인 처리
-    async function handleLogin(e) {
-      e.preventDefault();
-      const phone = document.getElementById('phone').value.replace(/-/g, '');
-      const password = document.getElementById('password').value;
+    html { scroll-behavior: smooth; }
 
-      if (!phone || !password) {
-        Utils.showToast('휴대폰 번호와 비밀번호를 입력하세요.', 'warning');
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--primary); text-decoration: none; }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: #fff;
+      padding: 56px 20px 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.10), transparent 40%),
+                  radial-gradient(circle at 80% 80%, rgba(255,255,255,0.08), transparent 40%);
+      pointer-events: none;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      background: rgba(255,255,255,0.15);
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(4px);
+    }
+    .brand .leaf { font-size: 16px; }
+    .header h1 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .header p {
+      font-size: 16px;
+      opacity: 0.92;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: -48px auto 0;
+      padding: 0 20px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      background: var(--bg-white);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+    }
+    .toolbar-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .toolbar-title { font-size: 17px; font-weight: 700; }
+    .toolbar-count {
+      background: var(--primary);
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .toolbar-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .search {
+      flex: 1;
+      min-width: 200px;
+      max-width: 280px;
+      position: relative;
+    }
+    .search input {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-family: inherit;
+      background: #FAFBFA;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .search input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #fff;
+    }
+    .search::before {
+      content: "🔍";
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      opacity: 0.6;
+    }
+
+    /* Sort */
+    .sort-group {
+      display: inline-flex;
+      background: #F2F5F2;
+      padding: 3px;
+      border-radius: var(--radius-sm);
+      gap: 2px;
+    }
+    .sort-btn {
+      border: none;
+      background: transparent;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--text-light);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .sort-btn:hover { color: var(--primary-dark); }
+    .sort-btn.active {
+      background: var(--bg-white);
+      color: var(--primary-dark);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .sort-btn .arrow { font-size: 11px; margin-left: 4px; opacity: 0.7; }
+
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    /* Card */
+    .card {
+      background: var(--bg-white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+    .card:hover .card-image img,
+    .card:hover .card-image-placeholder { transform: scale(1.04); }
+    .card.coming { opacity: 0.85; }
+
+    /* Image area */
+    .card-image {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background: #EDF2EE;
+    }
+    .card-image img,
+    .card-image-placeholder {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+    .card-image-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-dark) 100%);
+      color: rgba(255,255,255,0.92);
+      text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .image-discount {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 999px;
+      box-shadow: 0 2px 8px rgba(211, 47, 47, 0.35);
+      letter-spacing: -0.01em;
+    }
+    .image-discount .label { font-size: 10px; font-weight: 700; opacity: 0.9; margin-right: 3px; }
+    .image-soon-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(20, 30, 24, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      backdrop-filter: blur(2px);
+    }
+
+    /* Body */
+    .card-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .card-tags {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+    }
+    .tag-stay { background: #E8F5E9; color: var(--primary-dark); }
+    .tag-people { background: #FFF3E0; color: #E65100; }
+    .tag-soon { background: #ECEFF1; color: #546E7A; }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 14px;
+      min-height: 2.6em;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .price-block { margin-bottom: 16px; }
+    .price-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .price-original { text-decoration: line-through; }
+    .price-final {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .price-final-rate {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--danger);
+      letter-spacing: -0.02em;
+    }
+    .price-final-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .price-final-value .won { font-size: 14px; font-weight: 600; margin-left: 2px; }
+    .price-base { font-size: 11px; color: var(--text-light); margin-left: 4px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      border: none;
+      margin-top: auto;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-dark); color: #fff; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary .arrow { transition: transform 0.15s; }
+    .btn-primary:hover .arrow { transform: translateX(3px); }
+    .btn-disabled {
+      background: #ECEFF1;
+      color: #78909C;
+      cursor: not-allowed;
+    }
+
+    /* Empty state */
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-light);
+      background: var(--bg-white);
+      border-radius: var(--radius);
+      border: 1px dashed var(--border);
+    }
+    .empty-icon { font-size: 36px; margin-bottom: 8px; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-light);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-white);
+    }
+    .footer .footer-brand { color: var(--primary-dark); font-weight: 700; }
+    .footer a { margin: 0 6px; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .header { padding: 40px 16px 64px; }
+      .header h1 { font-size: 28px; }
+      .header p { font-size: 14px; }
+      .container { padding: 0 14px 60px; }
+      .grid { grid-template-columns: 1fr; gap: 14px; }
+      .card { padding: 18px; }
+      .toolbar { padding: 14px 16px; }
+      .search { max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <span class="brand"><span class="leaf">🌿</span> 남원누비고</span>
+    <h1>남원 농촌관광 상품</h1>
+    <p>지리산 자락에서 만나는 1박 2일, 남원의 자연과 이야기를 누벼보세요.</p>
+  </header>
+
+  <main class="container">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <span class="toolbar-title">전체 상품</span>
+        <span class="toolbar-count" id="productCount">0</span>
+      </div>
+      <div class="toolbar-right">
+        <div class="sort-group" role="group" aria-label="정렬">
+          <button class="sort-btn active" data-sort="default">기본순</button>
+          <button class="sort-btn" data-sort="asc">낮은가격순<span class="arrow">▲</span></button>
+          <button class="sort-btn" data-sort="desc">높은가격순<span class="arrow">▼</span></button>
+        </div>
+        <div class="search">
+          <input type="text" id="searchInput" placeholder="상품명으로 검색..." aria-label="상품 검색">
+        </div>
+      </div>
+    </div>
+
+    <div class="grid" id="productGrid"></div>
+  </main>
+
+  <footer class="footer">
+    <p><span class="footer-brand">남원누비고</span> · 남원시 농촌관광 통합 관리 시스템</p>
+    <p style="margin-top:6px;">문의: 063-XXX-XXXX</p>
+  </footer>
+
+  <script>
+    const PRODUCTS = [
+      { name: "별헤는밤가족캠프(1박2일)", sale: 123200, list: 176000, base: 1, url: "https://xn--zb0br6vh5a81l9tqfe527dgsa.kr/bbs/content.php?co_id=145", img: "images/products/01.jpg" },
+      { name: "몽심재 수지맞은 힐링투어(1박2일)", sale: 139300, list: 199000, base: 1, url: "https://booking.naver.com/booking/3/bizes/1489168", img: "images/products/02.jpg" },
+      { name: "혼불문화기행(1박2일)", sale: 106400, list: 152000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1528883", img: "images/products/03.jpg" },
+      { name: "추어마을(1박2일)", sale: 211400, list: 302000, base: 2, url: "https://booking.naver.com/booking/12/bizes/1494435", img: "images/products/04.jpg" },
+      { name: "솔바람 권역(1박2일)", sale: 33600, list: 48000, base: 1, url: "https://booking.naver.com/booking/3/bizes/1489096", img: "images/products/05.jpg" },
+      { name: "요천 다슬기마을(1박2일)", sale: 131600, list: 188000, base: 3, url: null, img: "images/products/06.jpg" },
+      { name: "반려견과 함께하는 지리산 산책(1박2일)", sale: 98700, list: 141000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1489084", img: null, emoji: "🐕" },
+      { name: "달팽이 한옥게스트(1박2일)", sale: 114800, list: 164000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1339562", img: "images/products/08.jpg" },
+      { name: "동편제마을 휴락게스트하우스(1박2일)", sale: 179900, list: 257000, base: 2, url: null, img: "images/products/09.jpg" },
+      { name: "지리산 원천마을(1박2일)", sale: 99400, list: 142000, base: 3, url: null, img: null, emoji: "🏞️" },
+      { name: "지리산 나들락(1박2일)", sale: 114800, list: 164000, base: 2, url: null, img: null, emoji: "🌄" },
+      { name: "지리산에서 별헤는 밤(1박2일)", sale: 114800, list: 164000, base: 2, url: null, img: "images/products/12.jpg" }
+    ];
+
+    const fmt = n => n.toLocaleString('ko-KR');
+    const discountRate = (sale, list) => Math.round((1 - sale / list) * 100);
+
+    function render(items) {
+      const grid = document.getElementById('productGrid');
+      const count = document.getElementById('productCount');
+      count.textContent = items.length;
+
+      if (items.length === 0) {
+        grid.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">🔍</div>
+            <p>검색 결과가 없습니다.</p>
+          </div>`;
         return;
       }
 
-      await Auth.login(phone, password);
+      grid.innerHTML = items.map(p => {
+        const isSoon = !p.url;
+        const rate = discountRate(p.sale, p.list);
+        const stayMatch = p.name.match(/\(([^)]+)\)\s*$/);
+        const stay = stayMatch ? stayMatch[1] : '';
+        const cleanName = p.name.replace(/\s*\([^)]+\)\s*$/, '');
+
+        const imageContent = p.img
+          ? `<img src="${p.img}" alt="${cleanName}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'card-image-placeholder',textContent:'${p.emoji || '🌿'}'}))">`
+          : `<div class="card-image-placeholder">${p.emoji || '🌿'}</div>`;
+
+        const button = isSoon
+          ? `<button class="btn btn-disabled" disabled>예약 준비중</button>`
+          : `<a class="btn btn-primary" href="${p.url}" target="_blank" rel="noopener noreferrer">예약하기 <span class="arrow">→</span></a>`;
+
+        return `
+          <article class="card${isSoon ? ' coming' : ''}">
+            <div class="card-image">
+              ${imageContent}
+              <span class="image-discount"><span class="label">SALE</span>${rate}%</span>
+              ${isSoon ? `<div class="image-soon-overlay">예약 준비중</div>` : ''}
+            </div>
+            <div class="card-body">
+              <div class="card-tags">
+                ${stay ? `<span class="tag tag-stay">${stay}</span>` : ''}
+                <span class="tag tag-people">기준 ${p.base}인</span>
+              </div>
+              <h2 class="card-title">${cleanName}</h2>
+              <div class="price-block">
+                <div class="price-row">
+                  <span class="price-original">${fmt(p.list)}원</span>
+                </div>
+                <div class="price-final">
+                  <span class="price-final-rate">${rate}%</span>
+                  <span class="price-final-value">${fmt(p.sale)}<span class="won">원</span></span>
+                  <span class="price-base">/ ${p.base}인 기준</span>
+                </div>
+              </div>
+              ${button}
+            </div>
+          </article>`;
+      }).join('');
     }
+
+    let currentSort = 'default';
+
+    function applyFilter() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      let list = q
+        ? PRODUCTS.filter(p => p.name.toLowerCase().includes(q))
+        : PRODUCTS.slice();
+
+      if (currentSort === 'asc') list.sort((a, b) => a.sale - b.sale);
+      else if (currentSort === 'desc') list.sort((a, b) => b.sale - a.sale);
+
+      render(list);
+    }
+
+    document.getElementById('searchInput').addEventListener('input', applyFilter);
+
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentSort = btn.dataset.sort;
+        applyFilter();
+      });
+    });
+
+    render(PRODUCTS);
   </script>
 </body>
 </html>

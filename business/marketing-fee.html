@@ -93,7 +93,7 @@
   <script src="../js/api.js"></script>
   <script src="../js/auth.js"></script>
   <script>
-    if (!Auth.requireAuth('business')) window.location.href = '../index.html';
+    if (!Auth.requireAuth('business')) window.location.href = '../login.html';
     document.getElementById('userInfo').textContent = Auth.getUserName();
 
     const businessId = Auth.getBusinessId();

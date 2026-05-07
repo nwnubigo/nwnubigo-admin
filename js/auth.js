@@ -60,9 +60,9 @@ const Auth = {
     const isSubDir = window.location.pathname.includes('/admin/') ||
                      window.location.pathname.includes('/business/');
     if (isSubDir) {
-      window.location.href = '../index.html';
+      window.location.href = '../login.html';
     } else {
-      window.location.href = 'index.html';
+      window.location.href = 'login.html';
     }
   },
 
