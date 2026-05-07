@@ -252,16 +252,16 @@
     .image-discount .label { font-size: 10px; font-weight: 700; opacity: 0.9; margin-right: 3px; }
     .image-soon-overlay {
       position: absolute;
-      inset: 0;
-      background: rgba(20, 30, 24, 0.55);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      top: 12px;
+      right: 12px;
+      background: rgba(20, 30, 24, 0.78);
       color: #fff;
-      font-size: 15px;
+      font-size: 12px;
       font-weight: 700;
-      letter-spacing: 0.05em;
-      backdrop-filter: blur(2px);
+      letter-spacing: 0.04em;
+      padding: 6px 12px;
+      border-radius: 999px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     }
 
     /* Body */
@@ -513,18 +513,18 @@
 
   <script>
     const PRODUCTS = [
-      { name: "몽심재 수지맞은 힐링투어(1박2일)", sale: 139300, list: 199000, base: 1, url: "https://booking.naver.com/booking/3/bizes/1489168", img: "images/products/02.jpg" },
-      { name: "혼불문화기행(1박2일)", sale: 106400, list: 152000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1528883", img: "images/products/03.jpg" },
-      { name: "추어마을(1박2일)", sale: 211400, list: 302000, base: 2, url: "https://booking.naver.com/booking/12/bizes/1494435", img: "images/products/04.jpg" },
-      { name: "솔바람 권역(1박2일)", sale: 33600, list: 48000, base: 1, url: "https://booking.naver.com/booking/3/bizes/1489096", img: "images/products/05.jpg" },
-      { name: "반려견과 함께하는 지리산 산책(1박2일)", sale: 98700, list: 141000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1489084", img: null, emoji: "🐕" },
-      { name: "달팽이 한옥게스트(1박2일)", sale: 114800, list: 164000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1339562", img: "images/products/08.jpg" },
-      { name: "별헤는밤가족캠프(1박2일)", sale: 123200, list: 176000, base: 1, url: "https://xn--zb0br6vh5a81l9tqfe527dgsa.kr/bbs/content.php?co_id=145", img: "images/products/01.jpg" },
-      { name: "요천 다슬기마을(1박2일)", sale: 131600, list: 188000, base: 3, url: null, img: "images/products/06.jpg" },
-      { name: "동편제마을 휴락게스트하우스(1박2일)", sale: 179900, list: 257000, base: 2, url: null, img: "images/products/09.jpg" },
-      { name: "지리산 원천마을(1박2일)", sale: 99400, list: 142000, base: 3, url: null, img: null, emoji: "🏞️" },
-      { name: "지리산 나들락(1박2일)", sale: 114800, list: 164000, base: 2, url: null, img: null, emoji: "🌄" },
-      { name: "지리산에서 별헤는 밤(1박2일)", sale: 114800, list: 164000, base: 2, url: null, img: "images/products/12.jpg" }
+      { name: "몽심재 수지맞은 힐링투어(1박2일)", sale: 139300, list: 199000, base: 1, url: "https://booking.naver.com/booking/3/bizes/1489168", img: "images/products/몽심재 수지맞은 힐링투어.jpg" },
+      { name: "혼불문화기행(1박2일)", sale: 106400, list: 152000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1528883", img: "images/products/혼불문화기행.jpg" },
+      { name: "추어마을(1박2일)", sale: 211400, list: 302000, base: 2, url: "https://booking.naver.com/booking/12/bizes/1494435", img: "images/products/추어마을.jpg" },
+      { name: "솔바람 권역(1박2일)", sale: 33600, list: 48000, base: 1, url: "https://booking.naver.com/booking/3/bizes/1489096", img: "images/products/솔바람 권역.jpg" },
+      { name: "순이네 흙집(1박2일)", sale: 98700, list: 141000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1489084", img: "images/products/순이네흙집.jpg" },
+      { name: "달팽이 한옥게스트(1박2일)", sale: 114800, list: 164000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1339562", img: "images/products/달팽이 한옥게스트.jpg" },
+      { name: "별헤는밤가족캠프(1박2일)", sale: 123200, list: 176000, base: 1, url: "https://xn--zb0br6vh5a81l9tqfe527dgsa.kr/bbs/content.php?co_id=145", img: "images/products/별헤는밤가족캠프.jpg" },
+      { name: "요천 다슬기마을(1박2일)", sale: 131600, list: 188000, base: 3, url: null, img: "images/products/요천 다슬기마을.jpg" },
+      { name: "동편제마을 휴락게스트하우스(1박2일)", sale: 179900, list: 257000, base: 2, url: null, img: "images/products/동편제마을 휴락게스트하우스.jpg" },
+      { name: "지리산 원천마을(1박2일)", sale: 99400, list: 142000, base: 3, url: null, img: "images/products/지리산 원천마을.jpg" },
+      { name: "지리산 나들락(1박2일)", sale: 114800, list: 164000, base: 2, url: null, img: "images/products/지리산 나들락.png" },
+      { name: "지리산에서 별헤는 밤(1박2일)", sale: 114800, list: 164000, base: 2, url: null, img: "images/products/지리산에서 별헤는 밤.png" }
     ];
 
     const fmt = n => n.toLocaleString('ko-KR');
