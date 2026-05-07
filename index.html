@@ -376,24 +376,88 @@
 
     /* Footer */
     .footer {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-light);
+      background: #2C2E33;
+      color: #C7CDD2;
       font-size: 13px;
-      border-top: 1px solid var(--border);
-      background: var(--bg-white);
+      padding: 36px 24px;
+      border-top: none;
     }
-    .footer .footer-brand { color: var(--primary-dark); font-weight: 700; }
-    .footer a { margin: 0 6px; }
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+    .footer-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 28px;
+      flex: 1;
+      min-width: 0;
+    }
+    .footer-logo {
+      width: 88px;
+      height: auto;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .footer-info p {
+      margin-bottom: 4px;
+      line-height: 1.7;
+      color: #C7CDD2;
+    }
+    .footer-info .footer-copy {
+      margin-top: 10px;
+      color: #888D93;
+      font-size: 12px;
+    }
+    .footer-contact {
+      min-width: 240px;
+    }
+    .contact-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+    .contact-phone {
+      display: block;
+      font-size: 30px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+      line-height: 1.1;
+    }
+    .contact-phone:hover { color: #fff; }
+    .contact-hours,
+    .contact-meta {
+      font-size: 13px;
+      color: #C7CDD2;
+      margin-bottom: 4px;
+      line-height: 1.6;
+    }
+    .contact-meta a { color: #C7CDD2; }
 
     /* Responsive */
+    @media (max-width: 768px) {
+      .footer { padding: 28px 18px; }
+      .footer-inner { flex-direction: column; gap: 22px; }
+      .footer-main { flex-wrap: wrap; gap: 18px; }
+      .footer-logo { width: 72px; }
+      .contact-phone { font-size: 26px; }
+    }
     @media (max-width: 600px) {
       .header { padding: 40px 16px 64px; }
       .header h1 { font-size: 28px; }
       .header p { font-size: 14px; }
       .container { padding: 0 14px 60px; }
       .grid { grid-template-columns: 1fr; gap: 14px; }
-      .card { padding: 18px; }
+      .card-body { padding: 16px; }
       .toolbar { padding: 14px 16px; }
       .search { max-width: none; }
     }
@@ -428,20 +492,35 @@
   </main>
 
   <footer class="footer">
-    <p><span class="footer-brand">남원누비고</span> · 남원시 농촌관광 통합 관리 시스템</p>
-    <p style="margin-top:6px;">문의: 063-XXX-XXXX</p>
+    <div class="footer-inner">
+      <div class="footer-main">
+        <img src="images/logo.png" alt="남원누비GO" class="footer-logo">
+        <div class="footer-info">
+          <p>사단법인 남원시농촌종합지원센터</p>
+          <p>전라북도 남원시 이백면 이백로 309 농업인상생플랫폼 2층&nbsp;&nbsp;사업자등록번호: 407-82-09703&nbsp;&nbsp;대표: 박종선</p>
+          <p>대표번호: 063-634-8077&nbsp;&nbsp;팩스: 063-634-8078&nbsp;&nbsp;E-mail: nwnubigo@naver.com</p>
+          <p class="footer-copy">Copyright ⓒ 2021 활력남원공동체 플랫폼. All rights Reserved.</p>
+        </div>
+      </div>
+      <div class="footer-contact">
+        <p class="contact-label">상담센터</p>
+        <a class="contact-phone" href="tel:063-634-8077">063-634-8077</a>
+        <p class="contact-hours">AM 09:00 ~ PM 18:00 / Lunch PM 12:30 ~ PM 01:30</p>
+        <p class="contact-meta"><a href="mailto:nwnubigo@naver.com">nwnubigo@naver.com</a>&nbsp;&nbsp;주말 및 공휴일 휴무</p>
+      </div>
+    </div>
   </footer>
 
   <script>
     const PRODUCTS = [
-      { name: "별헤는밤가족캠프(1박2일)", sale: 123200, list: 176000, base: 1, url: "https://xn--zb0br6vh5a81l9tqfe527dgsa.kr/bbs/content.php?co_id=145", img: "images/products/01.jpg" },
       { name: "몽심재 수지맞은 힐링투어(1박2일)", sale: 139300, list: 199000, base: 1, url: "https://booking.naver.com/booking/3/bizes/1489168", img: "images/products/02.jpg" },
       { name: "혼불문화기행(1박2일)", sale: 106400, list: 152000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1528883", img: "images/products/03.jpg" },
       { name: "추어마을(1박2일)", sale: 211400, list: 302000, base: 2, url: "https://booking.naver.com/booking/12/bizes/1494435", img: "images/products/04.jpg" },
       { name: "솔바람 권역(1박2일)", sale: 33600, list: 48000, base: 1, url: "https://booking.naver.com/booking/3/bizes/1489096", img: "images/products/05.jpg" },
-      { name: "요천 다슬기마을(1박2일)", sale: 131600, list: 188000, base: 3, url: null, img: "images/products/06.jpg" },
       { name: "반려견과 함께하는 지리산 산책(1박2일)", sale: 98700, list: 141000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1489084", img: null, emoji: "🐕" },
       { name: "달팽이 한옥게스트(1박2일)", sale: 114800, list: 164000, base: 2, url: "https://booking.naver.com/booking/3/bizes/1339562", img: "images/products/08.jpg" },
+      { name: "별헤는밤가족캠프(1박2일)", sale: 123200, list: 176000, base: 1, url: "https://xn--zb0br6vh5a81l9tqfe527dgsa.kr/bbs/content.php?co_id=145", img: "images/products/01.jpg" },
+      { name: "요천 다슬기마을(1박2일)", sale: 131600, list: 188000, base: 3, url: null, img: "images/products/06.jpg" },
       { name: "동편제마을 휴락게스트하우스(1박2일)", sale: 179900, list: 257000, base: 2, url: null, img: "images/products/09.jpg" },
       { name: "지리산 원천마을(1박2일)", sale: 99400, list: 142000, base: 3, url: null, img: null, emoji: "🏞️" },
       { name: "지리산 나들락(1박2일)", sale: 114800, list: 164000, base: 2, url: null, img: null, emoji: "🌄" },
